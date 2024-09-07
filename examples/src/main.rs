@@ -1,26 +1,37 @@
-use async_autoreturn_pool::Pool;
+use autoreturn_pool::{Config, Pool};
 
 #[derive(Debug)]
 struct MyObject {
-    _value: i32,
+    value: i32,
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let pool = Pool::new(3).await;
+fn main() -> anyhow::Result<()> {
+    let objects = [
+        MyObject { value: 1 },
+        MyObject { value: 2 },
+    ];
 
-    {
-        let my_object1 = pool
-            .try_take_or_create(|| Ok(MyObject { _value: 1 }))
-            .await?;
-        println!("my_obj: {:?}", *my_object1);
-    }
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    let my_object2 = pool
-        .try_take_or_create(|| Ok(MyObject { _value: 2 }))
-        .await?;
-    println!("my_obj: {:?}", *my_object2);
+    let config = Config {
+        wait_duration: std::time::Duration::from_millis(5),
+    };
 
-    println!("Hello, world!");
+    let pool = Pool::with_config(config, objects)?;
+
+    let obj1_val = {
+        let obj1 = pool.take()?.unwrap();
+        println!("obj1: {:?}", *obj1);
+        obj1.value
+    };
+    let obj2 = pool.take()?.unwrap();
+    println!("obj2: {:?}", *obj2);
+
+    assert_eq!(obj1_val, obj2.value);
+
+    let obj3 = pool.take()?.unwrap();
+    println!("obj3: {:?}", *obj3);
+    assert_ne!(obj2.value, obj3.value);
+
+    let obj4 = pool.take()?;
+    assert!(obj4.is_none());
     Ok(())
 }

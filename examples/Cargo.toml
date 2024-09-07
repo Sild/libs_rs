@@ -2,16 +2,16 @@
 name = "example"
 authors = ["Sild <sildtm@icloud.com>"]
 repository = "https://github.com/Sild/async-autoreturn-pool"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 rust-version = "1.80"
 license = "MIT OR Apache-2.0"
+publish = false
 
 [[bin]]
 name = "example"
 path = "src/main.rs"
 
 [dependencies]
-tokio = { version = "1.40.0", features = ["rt-multi-thread", "rt", "macros", "time"] }
 anyhow = "1.0.87"
-async-autoreturn-pool = { path = "../library" }
+autoreturn-pool = { path = "../library" }

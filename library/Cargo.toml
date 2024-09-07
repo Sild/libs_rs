@@ -1,16 +1,15 @@
 [package]
-name = "async-autoreturn-pool"
+name = "autoreturn-pool"
 authors = ["Sild <sildtm@icloud.com>"]
 repository = "https://github.com/Sild/async-autoreturn-pool"
-description = "A simple async pool that returns the value to the pool when dropped"
-version = "0.1.1"
+description = "A simple pool that returns items automatically after it's dropped"
+version = "0.0.2"
 edition = "2021"
 rust-version = "1.80"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-tokio = { version = "1.40.0", features = ["sync", "rt"]}
-anyhow = "1.0.87"
+log = "0.4.22"
 
 [dev-dependencies]
-tokio = {version = "1.40.0", features= ["rt-multi-thread", "macros"]}
+anyhow = "1.0.87"

@@ -1,75 +1,105 @@
 use crate::pool_object::PoolObject;
-use std::sync::{Arc, Weak};
-use tokio::sync::{Mutex, RwLock};
+use std::sync::{Arc, Condvar, Mutex, RwLock, Weak};
+use std::time::Duration;
+use crate::Error;
+
+#[derive(Clone, Debug)]
+pub struct Config {
+    pub wait_duration: Duration,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            wait_duration: Duration::MAX,
+        }
+    }
+}
+
+pub type ArcPool<T> = Arc<Pool<T>>;
 
 pub struct Pool<T: Send> {
-    objects: Arc<Mutex<Vec<T>>>,
-    max_size: usize,
+    config: Config,
+    storage: Arc<(Mutex<Vec<T>>, Condvar)>,
     self_ptr: RwLock<Option<Weak<Self>>>,
 }
 
 impl<T: Send + 'static> Pool<T> {
-    pub async fn new(max_size: usize) -> Arc<Self> {
+
+    pub fn new<I>(items: I) -> Result<ArcPool<T>, Error>
+    where
+        I: IntoIterator<Item = T>,
+    {
+        Self::with_config(Config::default(), items)
+    }
+
+    pub fn with_config<I>(config: Config, items: I) -> Result<ArcPool<T>, Error>
+    where
+        I: IntoIterator<Item = T>,
+    {
+        let objects = items.into_iter().collect();
         let pool = Self {
-            objects: Arc::new(Mutex::new(Vec::new())),
-            max_size,
+            config,
+            storage: Arc::new((Mutex::new(objects), Condvar::new())),
             self_ptr: RwLock::new(None),
         };
         let pool_ptr = Arc::new(pool);
-        *pool_ptr.self_ptr.write().await = Some(Arc::downgrade(&pool_ptr));
-        pool_ptr
+        *pool_ptr.self_ptr.write()? = Some(Arc::downgrade(&pool_ptr));
+        Ok(pool_ptr)
     }
 
-    pub async fn try_take_or_create<F>(&self, try_create_fn: F) -> anyhow::Result<PoolObject<T>>
-    where
-        F: Fn() -> anyhow::Result<T>,
-    {
-        let inner = {
-            let mut lock = self.objects.lock().await;
-            if lock.is_empty() {
-                try_create_fn()?
-            } else {
-                lock.pop().unwrap()
+    pub fn take(&self) -> Result<Option<PoolObject<T>>, Error> {
+        let (mtx, cvar) = &*self.storage;
+        let mut lock = mtx.lock()?;
+        while lock.is_empty() {
+            let (new_lock, is_timeout) = cvar.wait_timeout(lock, self.config.wait_duration)?;
+            if is_timeout.timed_out() {
+                return Ok(None);
             }
-        };
-        let pool_ptr = self.self_ptr.read().await.as_ref().unwrap().clone();
-        Ok(PoolObject::new(inner, pool_ptr))
-    }
-
-    pub async fn take_or_create<F>(&self, creator_fn: F) -> PoolObject<T>
-    where
-        F: Fn() -> T,
-    {
-        let try_create_fn = || Ok(creator_fn());
-        self.try_take_or_create(try_create_fn).await.unwrap()
-    }
-
-    /// Put an item back into the pool
-    /// Return true if the item was successfully put back into the pool
-    /// Return false if the pool is full
-    pub(crate) async fn put(&self, item: T) -> bool {
-        let mut lock = self.objects.lock().await;
-        if lock.len() >= self.max_size {
-            return false; // item is dropped
+            lock = new_lock;
         }
-        lock.push(item);
-        true
+        let inner = lock.pop().unwrap();
+        drop(lock);
+        let pool_ptr = self.self_ptr.read()?.as_ref().unwrap().clone();
+        Ok(Some(PoolObject::new(inner, pool_ptr)))
+    }
+
+    pub fn size(&self) -> Result<usize, Error> {
+        Ok(self.storage.0.lock()?.len())
+    }
+
+    pub(crate) fn put(&self, item: T) -> Result<(), Error> {
+        self.storage.0.lock()?.push(item);
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::Pool;
+    use std::ops::Deref;
+    use crate::pool::{Config, Pool};
 
-    #[tokio::test]
-    async fn test_workflow() -> anyhow::Result<()> {
-        let pool = Pool::new(2).await;
-        let obj1 = pool.try_take_or_create(|| Ok(1)).await?;
-        println!("obj1: {:?}", *obj1);
-        let obj2 = pool.try_take_or_create(|| Ok(2)).await?;
-        println!("my_obj2: {:?}", *obj2);
-        let obj3 = pool.take_or_create(|| 3).await;
-        println!("my_obj3: {:?}", *obj3);
+    #[test]
+    fn test_workflow() -> anyhow::Result<()> {
+        let config = Config {
+            wait_duration: std::time::Duration::from_millis(5),
+        };
+        let pool = Pool::with_config(config, [1, 2, 3])?;
+        assert_eq!(pool.size()?, 3);
+
+        let obj1 = pool.take()?;
+        assert_eq!(pool.size()?, 2);
+        assert_eq!(*obj1.as_ref().unwrap().deref(), 3);
+
+        let obj2 = pool.take()?;
+        assert_eq!(*obj2.as_ref().unwrap().deref(), 2);
+        let obj3 = pool.take()?;
+        assert_eq!(pool.size()?, 0);
+        assert_eq!(*obj3.as_ref().unwrap().deref(), 1);
+
+        let obj4 = pool.take()?;
+        assert!(obj4.is_none());
+
         Ok(())
     }
 }

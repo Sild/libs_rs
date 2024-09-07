@@ -1,3 +1,6 @@
 mod pool;
 mod pool_object;
-pub use pool::Pool;
+mod error;
+
+pub use pool::{Pool, ArcPool, Config};
+pub use error::Error;

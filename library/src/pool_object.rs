@@ -1,8 +1,8 @@
 use crate::pool::Pool;
 use std::ops::{Deref, DerefMut};
 use std::sync::Weak;
-use tokio::task;
 
+/// Simple wrapper allows to send object back to the pool when it's dropped
 pub struct PoolObject<T: Send + 'static> {
     inner: Option<T>,
     parent: Weak<Pool<T>>,
@@ -35,9 +35,9 @@ impl<T: Send + 'static> Drop for PoolObject<T> {
     fn drop(&mut self) {
         let inner = self.inner.take().unwrap();
         if let Some(parent) = self.parent.upgrade() {
-            task::spawn(async move {
-                parent.put(inner).await;
-            });
+            if let Err(err) = parent.put(inner) {
+                log::error!("Failed to put object back to the pool: {}", err);
+            }
         }
     }
 }
