@@ -1,7 +1,7 @@
+use crate::pool::Pool;
 use std::ops::{Deref, DerefMut};
 use std::sync::Weak;
 use tokio::task;
-use crate::pool::Pool;
 
 pub struct PoolObject<T: Send + 'static> {
     inner: Option<T>,
