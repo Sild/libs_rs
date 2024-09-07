@@ -11,3 +11,6 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 tokio = { version = "1.40.0", features = ["sync", "rt"]}
 anyhow = "1.0.87"
+
+[dev-dependencies]
+tokio = {version = "1.40.0", features= ["rt-multi-thread", "macros"]}
