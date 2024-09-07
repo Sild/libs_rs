@@ -1,0 +1,13 @@
+[package]
+name = "example"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "example"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1.40.0", features = ["rt-multi-thread", "rt", "macros"] }
+anyhow = "1.0.87"
+async-autoreturn-pool = { path = "../../async-autoreturn-pool" }
