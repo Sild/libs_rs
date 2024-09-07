@@ -1,0 +1,9 @@
+[package]
+name = "async-autoreturn-pool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.40.0", features = ["time"] }
+tokio-condvar = "0.3.0"
+anyhow = "1.0.87"
