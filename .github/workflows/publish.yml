@@ -11,8 +11,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: katyo/publish-crates@v2
         with:
           registry-token: ${{ secrets.CRATES_IO_REGISTRY_TOKEN }}
-          args: --no-verify
+          args: -p async-autoreturn-pool --no-verify

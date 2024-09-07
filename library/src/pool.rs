@@ -56,3 +56,20 @@ impl<T: Send + 'static> Pool<T> {
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Pool;
+
+    #[tokio::test]
+    async fn test_workflow() -> anyhow::Result<()> {
+        let pool = Pool::new(2).await;
+        let obj1 = pool.try_take_or_create(|| Ok(1)).await?;
+        println!("obj1: {:?}", *obj1);
+        let obj2 = pool.try_take_or_create(|| Ok(2)).await?;
+        println!("my_obj2: {:?}", *obj2);
+        let obj3 = pool.take_or_create(|| 3).await;
+        println!("my_obj3: {:?}", *obj3);
+        Ok(())
+    }
+}
