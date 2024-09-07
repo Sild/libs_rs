@@ -29,7 +29,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "tokio",
- "tokio-condvar",
 ]
 
 [[package]]
@@ -61,6 +60,15 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-autoreturn-pool",
+ "tokio",
+]
 
 [[package]]
 name = "gimli"
@@ -154,15 +162,6 @@ dependencies = [
  "backtrace",
  "pin-project-lite",
  "tokio-macros",
-]
-
-[[package]]
-name = "tokio-condvar"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8530e402d24f6a65019baa57593f1769557c670302f493cdf8fa3dfbe4d85ac"
-dependencies = [
- "tokio",
 ]
 
 [[package]]

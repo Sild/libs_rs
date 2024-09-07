@@ -1,11 +1,11 @@
+use crate::pool_object::PoolObject;
 use std::sync::{Arc, Weak};
 use tokio::sync::{Mutex, RwLock};
-use crate::pool_object::PoolObject;
 
 pub struct Pool<T: Send> {
     objects: Arc<Mutex<Vec<T>>>,
     max_size: usize,
-    self_ptr: RwLock<Option<Weak<Self>>>
+    self_ptr: RwLock<Option<Weak<Self>>>,
 }
 
 impl<T: Send + 'static> Pool<T> {
@@ -13,7 +13,7 @@ impl<T: Send + 'static> Pool<T> {
         let pool = Self {
             objects: Arc::new(Mutex::new(Vec::new())),
             max_size,
-            self_ptr: RwLock::new(None)
+            self_ptr: RwLock::new(None),
         };
         let pool_ptr = Arc::new(pool);
         *pool_ptr.self_ptr.write().await = Some(Arc::downgrade(&pool_ptr));
@@ -55,6 +55,4 @@ impl<T: Send + 'static> Pool<T> {
         lock.push(item);
         true
     }
-
-
 }

@@ -8,6 +8,6 @@ name = "example"
 path = "src/main.rs"
 
 [dependencies]
-tokio = { version = "1.40.0", features = ["rt-multi-thread", "rt", "macros"] }
+tokio = { version = "1.40.0", features = ["rt-multi-thread", "rt", "macros", "time"] }
 anyhow = "1.0.87"
-async-autoreturn-pool = { path = "../../async-autoreturn-pool" }
+async-autoreturn-pool = { path = "../library" }
