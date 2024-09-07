@@ -17,3 +17,4 @@ jobs:
           path: './library'
           registry-token: ${{ secrets.CRATES_IO_REGISTRY_TOKEN }}
           args: --no-verify
+          ignore-unpublished-changes: true
