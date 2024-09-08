@@ -1,20 +1,6 @@
 use crate::pool_object::PoolObject;
 use std::sync::{Arc, Condvar, Mutex, RwLock, Weak};
-use std::time::Duration;
-use crate::Error;
-
-#[derive(Clone, Debug)]
-pub struct Config {
-    pub wait_duration: Duration,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            wait_duration: Duration::MAX,
-        }
-    }
-}
+use crate::{Config, Error};
 
 pub type ArcPool<T> = Arc<Pool<T>>;
 
@@ -77,6 +63,7 @@ impl<T: Send + 'static> Pool<T> {
 #[cfg(test)]
 mod tests {
     use std::ops::Deref;
+    use crate::Config;
     use crate::pool::{Config, Pool};
 
     #[test]
