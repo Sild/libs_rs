@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::PoisonError;
 
+/// There is only one error type in this library - it's PoisonError from std::sync.
 #[derive(Debug)]
 pub enum Error {
     LockError(String),

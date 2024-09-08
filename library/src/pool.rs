@@ -4,6 +4,8 @@ use crate::{Config, Error};
 
 pub type ArcPool<T> = Arc<Pool<T>>;
 
+/// A pool of objects.
+/// After an object is taken from the pool, it is returned to the pool when it is dropped.
 pub struct Pool<T: Send> {
     config: Config,
     storage: Arc<(Mutex<Vec<T>>, Condvar)>,
@@ -12,6 +14,7 @@ pub struct Pool<T: Send> {
 
 impl<T: Send + 'static> Pool<T> {
 
+    /// Objects must be sent to the pool on creation.
     pub fn new<I>(items: I) -> Result<ArcPool<T>, Error>
     where
         I: IntoIterator<Item = T>,
@@ -34,6 +37,7 @@ impl<T: Send + 'static> Pool<T> {
         Ok(pool_ptr)
     }
 
+    /// Take an object from the pool. If the pool is empty, wait for the specified duration.
     pub fn take(&self) -> Result<Option<PoolObject<T>>, Error> {
         let (mtx, cvar) = &*self.storage;
         let mut lock = mtx.lock()?;
@@ -54,8 +58,10 @@ impl<T: Send + 'static> Pool<T> {
         Ok(self.storage.0.lock()?.len())
     }
 
+    /// Put an object back into the pool and notify one waiting thread.
     pub(crate) fn put(&self, item: T) -> Result<(), Error> {
         self.storage.0.lock()?.push(item);
+        self.storage.1.notify_one();
         Ok(())
     }
 }

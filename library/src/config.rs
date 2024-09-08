@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+/// Configuration for the pool.
+/// Wait indefinitely by default.
 #[derive(Clone, Debug)]
 pub struct Config {
     pub wait_duration: Duration,

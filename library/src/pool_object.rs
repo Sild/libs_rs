@@ -38,6 +38,8 @@ impl<T: Send + 'static> Drop for PoolObject<T> {
             if let Err(err) = parent.put(inner) {
                 log::error!("Failed to put object back to the pool: {}", err);
             }
+        } else {
+            log::warn!("Parent pool doesn't exist already");
         }
     }
 }
