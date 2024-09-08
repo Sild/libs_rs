@@ -1,6 +1,6 @@
 use crate::pool_object::PoolObject;
-use std::sync::{Arc, Condvar, Mutex, RwLock, Weak};
 use crate::{Config, Error};
+use std::sync::{Arc, Condvar, Mutex, RwLock, Weak};
 
 pub type ArcPool<T> = Arc<Pool<T>>;
 
@@ -13,7 +13,6 @@ pub struct Pool<T: Send> {
 }
 
 impl<T: Send + 'static> Pool<T> {
-
     /// Objects must be sent to the pool on creation.
     pub fn new<I>(items: I) -> Result<ArcPool<T>, Error>
     where
@@ -68,9 +67,9 @@ impl<T: Send + 'static> Pool<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Deref;
+    use crate::pool::Pool;
     use crate::Config;
-    use crate::pool::{Config, Pool};
+    use std::ops::Deref;
 
     #[test]
     fn test_workflow() -> anyhow::Result<()> {

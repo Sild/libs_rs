@@ -6,10 +6,7 @@ struct MyObject {
 }
 
 fn main() -> anyhow::Result<()> {
-    let objects = [
-        MyObject { value: 1 },
-        MyObject { value: 2 },
-    ];
+    let objects = [MyObject { value: 1 }, MyObject { value: 2 }];
 
     let config = Config {
         wait_duration: std::time::Duration::from_millis(5),
