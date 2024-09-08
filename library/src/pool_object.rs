@@ -2,7 +2,7 @@ use crate::pool::Pool;
 use std::ops::{Deref, DerefMut};
 use std::sync::Weak;
 
-/// Simple wrapper allows to send object back to the pool when it's dropped
+/// Wrapper allows to send object back to the pool when it's dropped
 pub struct PoolObject<T: Send + 'static> {
     inner: Option<T>,
     parent: Weak<Pool<T>>,
