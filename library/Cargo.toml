@@ -1,6 +1,6 @@
 [package]
 name = "autoreturn-pool"
-authors = ["Sild <sildtm@icloud.com>"]
+authors = ["Sild <silddev@proton.me>"]
 repository = "https://github.com/Sild/autoreturn-pool"
 description = "A simple pool that returns items automatically after it's dropped"
 version = "0.1.2"

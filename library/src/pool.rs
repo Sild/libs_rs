@@ -52,8 +52,7 @@ impl<T: Send + 'static> Pool<T> {
     pub fn take(&self) -> Result<Option<PoolObject<T>>, Error> {
         let mut lock = self.storage.lock()?;
         while lock.is_empty() {
-            let (new_lock, wait_res) =
-                self.condvar.wait_timeout(lock, self.config.wait_duration)?;
+            let (new_lock, wait_res) = self.condvar.wait_timeout(lock, self.config.wait_duration)?;
             if wait_res.timed_out() {
                 return Ok(None);
             }
