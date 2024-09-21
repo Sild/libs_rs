@@ -3,6 +3,12 @@
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/Sild/autoreturn-pool/releases/tag/autoreturn_pool-v0.1.2) - 2024-09-21
+
+### Other
+
+- merge dev ([#11](https://github.com/Sild/autoreturn-pool/pull/11))
+
 ## [0.1.2](https://github.com/Sild/autoreturn-pool/compare/autoreturn-pool-v0.1.1...autoreturn-pool-v0.1.2) - 2024-09-12
 
 ### Other
