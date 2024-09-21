@@ -10,6 +10,7 @@ use std::sync::{Condvar, Mutex};
 /// ```
 /// let pool = autoreturn_pool::Pool::new([1, 2])?;
 /// let item = pool.take()?.unwrap();
+/// # Ok::<(), anyhow::Error>(())
 /// ```
 /// with custom config:
 /// ```
@@ -18,6 +19,7 @@ use std::sync::{Condvar, Mutex};
 /// };
 /// let pool = autoreturn_pool::Pool::with_config(config, [1, 2])?;
 /// let item = pool.take()?.unwrap();
+/// # Ok::<(), anyhow::Error>(())
 /// ```
 pub struct Pool<T: Send> {
     config: Config,
