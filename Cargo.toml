@@ -1,13 +1,14 @@
 [workspace]
 members = [
-    "auto_pool"
+    "auto_pool",
+    "ton_lite_client",
 ]
 
 resolver = "2"
 
 [workspace.package]
 edition = "2021"
-authors = ["Sild <silddev@proton.me"]
+authors = ["Sild <silddev@pm.me"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/sild/libs_rs"
 rust-version = "1.80"
