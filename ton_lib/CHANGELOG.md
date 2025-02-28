@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2](https://github.com/Sild/libs_rs/compare/ton_lib-v0.0.1...ton_lib-v0.0.2) - 2025-02-28
+
+### Other
+
+- release v0.3.1 (#33)
+
 ## [0.0.1](https://github.com/Sild/libs_rs/releases/tag/ton_lib-v0.0.1) - 2025-02-28
 
 ### Other
