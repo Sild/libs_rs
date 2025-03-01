@@ -79,6 +79,14 @@ impl<'a> TonCellParser<'a> {
             }),
         }
     }
+    
+    pub fn read_rest(&mut self) -> TonLibResult<(Vec<u8>, u32)> {
+        let bits_left = self.ensure_enough_bits(0)?;
+        
+        let mut data = vec![0u8; (bits_left as usize + 7) / 8];
+        self.read_bits(bits_left, &mut data)?;
+        Ok((data, bits_left))
+    }
 
     pub fn ensure_empty(&mut self) -> TonLibResult<()> {
         let bits_left = self.ensure_enough_bits(0)?;
@@ -89,6 +97,7 @@ impl<'a> TonCellParser<'a> {
         Err(TonLibError::CellParserCellNotEmpty { bits_left })
     }
 
+    // returns remaining bits
     fn ensure_enough_bits(&mut self, bit_len: u32) -> TonLibResult<u32> {
         let reader_pos = self.data_reader.position_in_bits()? as u32;
         let bits_left = self.cell.get_data_bits_len() as u32 - reader_pos;
@@ -131,23 +140,23 @@ mod tests {
             data_bits_len: 10,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
-        assert_ok!(reader.seek_bits(3));
-        assert_eq!(reader.data_reader.position_in_bits()? as usize, 3);
-        assert_ok!(reader.seek_bits(-2));
-        assert_eq!(reader.data_reader.position_in_bits()? as usize, 1);
-        assert_ok!(reader.seek_bits(0));
-        assert_eq!(reader.data_reader.position_in_bits()? as usize, 1);
-        assert_ok!(reader.seek_bits(-1));
-        assert_eq!(reader.data_reader.position_in_bits()? as usize, 0);
-        assert_err!(reader.seek_bits(-1));
-        assert_eq!(reader.data_reader.position_in_bits()? as usize, 0);
-        assert_ok!(reader.seek_bits(cell_slice.data_bits_len as i32 - 1));
-        assert_eq!(reader.data_reader.position_in_bits()? as usize, cell_slice.data_bits_len - 1);
-        assert_err!(reader.seek_bits(1));
-        assert_eq!(reader.data_reader.position_in_bits()? as usize, cell_slice.data_bits_len - 1);
+        let mut parser = TonCellParser::new(&cell_slice)?;
+        assert_ok!(parser.seek_bits(3));
+        assert_eq!(parser.data_reader.position_in_bits()? as usize, 3);
+        assert_ok!(parser.seek_bits(-2));
+        assert_eq!(parser.data_reader.position_in_bits()? as usize, 1);
+        assert_ok!(parser.seek_bits(0));
+        assert_eq!(parser.data_reader.position_in_bits()? as usize, 1);
+        assert_ok!(parser.seek_bits(-1));
+        assert_eq!(parser.data_reader.position_in_bits()? as usize, 0);
+        assert_err!(parser.seek_bits(-1));
+        assert_eq!(parser.data_reader.position_in_bits()? as usize, 0);
+        assert_ok!(parser.seek_bits(cell_slice.data_bits_len as i32 - 1));
+        assert_eq!(parser.data_reader.position_in_bits()? as usize, cell_slice.data_bits_len - 1);
+        assert_err!(parser.seek_bits(1));
+        assert_eq!(parser.data_reader.position_in_bits()? as usize, cell_slice.data_bits_len - 1);
 
-        assert_err!(reader.seek_bits(20));
+        assert_err!(parser.seek_bits(20));
         Ok(())
     }
 
@@ -159,13 +168,13 @@ mod tests {
             data_bits_len: 16,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
-        assert_eq!(reader.lookup_bits(3)?, 0b101);
-        assert_eq!(reader.data_reader.position_in_bits()?, 0);
-        assert!(assert_ok!(reader.read_bit()));
-        assert_eq!(reader.data_reader.position_in_bits()?, 1);
-        assert_eq!(reader.lookup_bits(3)?, 0b010);
-        assert_eq!(reader.data_reader.position_in_bits()?, 1);
+        let mut parser = TonCellParser::new(&cell_slice)?;
+        assert_eq!(parser.lookup_bits(3)?, 0b101);
+        assert_eq!(parser.data_reader.position_in_bits()?, 0);
+        assert!(assert_ok!(parser.read_bit()));
+        assert_eq!(parser.data_reader.position_in_bits()?, 1);
+        assert_eq!(parser.lookup_bits(3)?, 0b010);
+        assert_eq!(parser.data_reader.position_in_bits()?, 1);
         Ok(())
     }
 
@@ -177,12 +186,12 @@ mod tests {
             data_bits_len: 16,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
+        let mut parser = TonCellParser::new(&cell_slice)?;
         for i in 0..8 {
-            assert_eq!(assert_ok!(reader.read_bit()), i % 2 == 0);
+            assert_eq!(assert_ok!(parser.read_bit()), i % 2 == 0);
         }
         for i in 0..8 {
-            assert_eq!(assert_ok!(reader.read_bit()), i % 2 != 0);
+            assert_eq!(assert_ok!(parser.read_bit()), i % 2 != 0);
         }
         Ok(())
     }
@@ -195,13 +204,13 @@ mod tests {
             data_bits_len: 10,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
-        assert_eq!(reader.data_reader.position_in_bits()?, 0);
-        assert_ok!(reader.ensure_enough_bits(0));
-        assert_ok!(reader.ensure_enough_bits(1));
-        assert_ok!(reader.ensure_enough_bits(6));
-        assert_ok!(reader.ensure_enough_bits(10));
-        assert_err!(reader.ensure_enough_bits(11));
+        let mut parser = TonCellParser::new(&cell_slice)?;
+        assert_eq!(parser.data_reader.position_in_bits()?, 0);
+        assert_ok!(parser.ensure_enough_bits(0));
+        assert_ok!(parser.ensure_enough_bits(1));
+        assert_ok!(parser.ensure_enough_bits(6));
+        assert_ok!(parser.ensure_enough_bits(10));
+        assert_err!(parser.ensure_enough_bits(11));
         Ok(())
     }
 
@@ -219,10 +228,10 @@ mod tests {
             data_bits_len: 0,
             refs: [Some(&cell_ref), Some(&cell_ref), None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
-        assert_eq!(reader.read_next_ref()?.get_data(), cell_ref.data);
-        assert_eq!(reader.read_next_ref()?.get_data(), cell_ref.data);
-        assert!(reader.read_next_ref().is_err());
+        let mut parser = TonCellParser::new(&cell_slice)?;
+        assert_eq!(parser.read_next_ref()?.get_data(), cell_ref.data);
+        assert_eq!(parser.read_next_ref()?.get_data(), cell_ref.data);
+        assert!(parser.read_next_ref().is_err());
         Ok(())
     }
 
@@ -234,11 +243,11 @@ mod tests {
             data_bits_len: 16,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
+        let mut parser = TonCellParser::new(&cell_slice)?;
         let mut dst = [0u8; 2];
-        reader.read_bits(3, &mut dst)?;
+        parser.read_bits(3, &mut dst)?;
         assert_eq!(dst, [0b10100000, 0]);
-        reader.read_bits(6, &mut dst)?;
+        parser.read_bits(6, &mut dst)?;
         assert_eq!(dst, [0b01010000, 0]);
         Ok(())
     }
@@ -251,11 +260,11 @@ mod tests {
             data_bits_len: 16,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
-        assert_eq!(reader.read_byte()?, 0b10101010);
-        assert_eq!(reader.data_reader.position_in_bits()?, 8);
-        assert_eq!(reader.read_byte()?, 0b01010101);
-        assert_eq!(reader.data_reader.position_in_bits()?, 16);
+        let mut parser = TonCellParser::new(&cell_slice)?;
+        assert_eq!(parser.read_byte()?, 0b10101010);
+        assert_eq!(parser.data_reader.position_in_bits()?, 8);
+        assert_eq!(parser.read_byte()?, 0b01010101);
+        assert_eq!(parser.data_reader.position_in_bits()?, 16);
         Ok(())
     }
 
@@ -267,9 +276,9 @@ mod tests {
             data_bits_len: 16,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
+        let mut parser = TonCellParser::new(&cell_slice)?;
         let mut dst = [0u8; 2];
-        reader.read_bytes(&mut dst)?;
+        parser.read_bytes(&mut dst)?;
         assert_eq!(dst, [0b10101010, 0b01010101]);
         Ok(())
     }
@@ -282,13 +291,13 @@ mod tests {
             data_bits_len: 16,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
-        assert_eq!(reader.read_num::<u8>(3)?, 0b101);
-        assert_eq!(reader.data_reader.position_in_bits()?, 3);
-        assert_eq!(reader.read_num::<u32>(3)?, 0b010);
-        assert_eq!(reader.data_reader.position_in_bits()?, 6);
-        assert_eq!(reader.read_num::<u64>(3)?, 0b100);
-        assert_eq!(reader.data_reader.position_in_bits()?, 9);
+        let mut parser = TonCellParser::new(&cell_slice)?;
+        assert_eq!(parser.read_num::<u8>(3)?, 0b101);
+        assert_eq!(parser.data_reader.position_in_bits()?, 3);
+        assert_eq!(parser.read_num::<u32>(3)?, 0b010);
+        assert_eq!(parser.data_reader.position_in_bits()?, 6);
+        assert_eq!(parser.read_num::<u64>(3)?, 0b100);
+        assert_eq!(parser.data_reader.position_in_bits()?, 9);
         Ok(())
     }
 
@@ -300,13 +309,27 @@ mod tests {
             data_bits_len: 19,
             refs: [None, None, None, None],
         };
-        let mut reader = TonCellParser::new(&cell_slice)?;
-        assert_eq!(reader.read_num::<u8>(4)?, 1);
-        assert_eq!(reader.data_reader.position_in_bits()?, 4);
-        assert_eq!(reader.read_num::<u16>(5)?, 2);
-        assert_eq!(reader.data_reader.position_in_bits()?, 9);
-        assert_eq!(reader.read_num::<u32>(10)?, 5);
-        assert_eq!(reader.data_reader.position_in_bits()?, 19);
+        let mut parser = TonCellParser::new(&cell_slice)?;
+        assert_eq!(parser.read_num::<u8>(4)?, 1);
+        assert_eq!(parser.data_reader.position_in_bits()?, 4);
+        assert_eq!(parser.read_num::<u16>(5)?, 2);
+        assert_eq!(parser.data_reader.position_in_bits()?, 9);
+        assert_eq!(parser.read_num::<u32>(10)?, 5);
+        assert_eq!(parser.data_reader.position_in_bits()?, 19);
+        Ok(())
+    }
+    
+    #[test]
+    fn test_parser_read_rest() -> anyhow::Result<()> {
+        let cell_slice = CellSlice {
+            meta: &CellMeta::EMPTY_CELL_META,
+            data: &[0b10101010, 0b01010101],
+            data_bits_len: 16,
+            refs: [None, None, None, None],
+        };
+        let mut parser = TonCellParser::new(&cell_slice)?;
+        assert!(parser.read_bit()?);
+        assert_eq!(parser.read_rest()?, (vec![0b01010100, 0b10101010], 15));
         Ok(())
     }
 }
