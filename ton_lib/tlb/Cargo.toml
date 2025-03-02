@@ -1,0 +1,16 @@
+[package]
+name = "ton_lib_tlb"
+version = "0.0.1"
+description = "TLBObject trait and utility to generate rust objects from TLB"
+keywords = ["ton", "the-open-network", "blockchain", "crypto"]
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = true
+
+[dependencies]
+ton_lib_cell = { path = "../cell" }
+hex = "0.4.3"
+thiserror = "2.0.11"

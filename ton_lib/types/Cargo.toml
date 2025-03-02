@@ -1,0 +1,17 @@
+[package]
+name = "ton_lib_types"
+version = "0.0.1"
+description = "Banch of tools for working with TON network"
+keywords = ["ton", "the-open-network", "blockchain", "crypto"]
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = true
+
+[dependencies]
+
+[dev-dependencies]
+anyhow = "1.0"
+tokio-test = "0.4"

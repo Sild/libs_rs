@@ -1,7 +1,10 @@
 [workspace]
 members = [
     "auto_pool",
-    "ton_lib",
+    "ton_lib/lib",
+    "ton_lib/cell",
+    "ton_lib/tlb",
+    "ton_lib/types",
 ]
 
 resolver = "2"
