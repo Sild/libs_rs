@@ -27,7 +27,7 @@ impl<'a> CellSlice<'a> {
     }
 
     pub fn from_cell(cell: &'a dyn TonCell) -> Self {
-        Self::new(cell.get_meta(), cell.get_data(), cell.get_data_bits_len(), SmallVec::from(cell.get_refs()))
+        Self::new(cell.get_meta(), cell.get_data(), cell.get_data_bits_len(), TonCellRefsStore::from(cell.get_refs()))
     }
 }
 

@@ -4,7 +4,6 @@ use crate::cell::meta::cell_type::CellType;
 use crate::errors::{TonCellError, TonCellResult};
 use crate::number::TonNumber;
 use bitstream_io::{BigEndian, BitWrite, BitWriter};
-use smallvec::SmallVec;
 use crate::cell::ton_cell::{TonCellRef, TonCellRefsStore};
 
 pub struct TonCellBuilder {
@@ -28,7 +27,7 @@ impl TonCellBuilder {
             cell_type,
             data_writer: bit_writer,
             data_bits_len: 0,
-            refs: SmallVec::new(),
+            refs: TonCellRefsStore::new(),
         }
     }
 

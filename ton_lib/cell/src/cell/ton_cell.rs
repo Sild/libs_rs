@@ -6,7 +6,7 @@ use std::sync::Arc;
 use smallvec::SmallVec;
 
 pub type TonCellRef = Arc<dyn TonCell>;
-pub type TonCellRefsStore = SmallVec<TonCellRef, 4>;
+pub type TonCellRefsStore = Vec<TonCellRef>;
 
 pub trait TonCell: Debug {
     // raw data access
