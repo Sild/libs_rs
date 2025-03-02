@@ -5,10 +5,23 @@ use ton_lib_cell::cell::cell_owned::CellOwned;
 use ton_lib_cell::cell::ton_cell::TonCell;
 use ton_lib_cell::cell::ton_hash::TonHash;
 
-pub trait TLBObject: Sized {
-    fn read(parser: &mut TonCellParser) -> TLBResult<Self>;
+pub trait TLBType: Sized {
+    // read-write definition
+    // https://docs.ton.org/v3/documentation/data-formats/tlb/tl-b-language#overview
+    // must be implemented by all TLB objects
+    fn read_def(parser: &mut TonCellParser) -> TLBResult<Self>;
+    fn write_def(&self, builder: &mut TonCellBuilder) -> TLBResult<()>;
 
-    fn write(&self, builder: &mut TonCellBuilder) -> TLBResult<()>;
+    // interface part
+    fn read(parser: &mut TonCellParser) -> TLBResult<Self> {
+        Self::verify_prefix(parser)?;
+        Self::read_def(parser)
+    }
+
+    fn write(&self, builder: &mut TonCellBuilder) -> TLBResult<()> {
+        Self::write_prefix(builder)?;
+        self.write_def(builder)
+    }
 
     fn prefix() -> &'static TLBPrefix { &TLBPrefix::NULL }
 
@@ -54,7 +67,7 @@ pub trait TLBObject: Sized {
         if expected_prefix == &TLBPrefix::NULL {
             return Ok(());
         }
-        let actual_value = reader.lookup_bits(expected_prefix.bit_len)?;
+        let actual_value = reader.lookup_bits(expected_prefix.bit_len as u8)?;
         if actual_value != expected_prefix.value {
             return Err(TLBError::WrongPrefix {
                 expected: expected_prefix.value,
@@ -64,22 +77,22 @@ pub trait TLBObject: Sized {
         Ok(())
     }
 
-    // fn write_prefix(builder: &mut TonCellWriter) -> TonLibResult<()> {
-    //     let prefix = Self::prefix();
-    //     if prefix != &TLBPrefix::NULL {
-    //         builder.store_u64(prefix.bit_len as usize, prefix.value)?;
-    //     }
-    //     Ok(())
-    // }
+    fn write_prefix(builder: &mut TonCellBuilder) -> TLBResult<()> {
+        let prefix = Self::prefix();
+        if prefix != &TLBPrefix::NULL {
+            builder.write_num(prefix.value, prefix.bit_len)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TLBPrefix {
-    pub bit_len: u8,
     pub value: u128,
+    pub bit_len: u32,
 }
 
 impl TLBPrefix {
     pub const NULL: TLBPrefix = TLBPrefix { bit_len: 0, value: 0 };
-    pub const fn new(bit_len: u8, value: u128) -> Self { Self { bit_len, value } }
+    pub const fn new(value: u128, bit_len: u32) -> Self { Self { bit_len, value } }
 }

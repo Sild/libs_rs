@@ -1,7 +1,7 @@
 [package]
 name = "ton_lib"
 version = "0.0.1"
-description = "meta crate for ton_lib: see dependencies"
+description = "A collection of types and utilities for interacting with the TON network"
 keywords = ["ton", "the-open-network", "blockchain", "crypto"]
 edition.workspace = true
 authors.workspace = true

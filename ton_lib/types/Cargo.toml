@@ -11,6 +11,7 @@ rust-version.workspace = true
 publish = true
 
 [dependencies]
+ton_lib_cell = { path = "../cell" }
 
 [dev-dependencies]
 anyhow = "1.0"

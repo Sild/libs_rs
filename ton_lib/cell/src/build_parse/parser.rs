@@ -135,16 +135,16 @@ impl<'a> TonCellParser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cell::cell_slice::CellSlice;
+    // use crate::cell::cell_slice::CellSlice;
     use crate::cell::meta::cell_meta::CellMeta;
     use tokio_test::{assert_err, assert_ok};
     use crate::cell::ton_cell::TonCellRefsStore;
 
     #[test]
     fn test_parser_seek_bits() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101001, 0b01010100],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101001, 0b01010100],
             data_bits_len: 10,
             refs: TonCellRefsStore::new(),
         };
@@ -170,9 +170,9 @@ mod tests {
 
     #[test]
     fn test_parser_lookup_bits() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101010, 0b01010101],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101010, 0b01010101],
             data_bits_len: 16,
             refs: TonCellRefsStore::new(),
         };
@@ -188,9 +188,9 @@ mod tests {
 
     #[test]
     fn test_parser_read_bit() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101010, 0b01010101],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101010, 0b01010101],
             data_bits_len: 16,
             refs: TonCellRefsStore::new(),
         };
@@ -206,9 +206,9 @@ mod tests {
 
     #[test]
     fn test_parser_ensure_enough_bits() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101010, 0b01010101],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101010, 0b01010101],
             data_bits_len: 10,
             refs: TonCellRefsStore::new(),
         };
@@ -230,9 +230,9 @@ mod tests {
             data_bits_len: 0,
             refs: TonCellRefsStore::new(),
         }.into_ref();
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![],
             data_bits_len: 0,
             refs: TonCellRefsStore::from(vec![cell_ref.clone(), cell_ref.clone()]),
         };
@@ -245,9 +245,9 @@ mod tests {
 
     #[test]
     fn test_parser_read_bits() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101010, 0b01010101],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101010, 0b01010101],
             data_bits_len: 16,
             refs: TonCellRefsStore::new(),
         };
@@ -262,9 +262,9 @@ mod tests {
 
     #[test]
     fn test_parser_read_byte() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101010, 0b01010101],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101010, 0b01010101],
             data_bits_len: 16,
             refs: TonCellRefsStore::new(),
         };
@@ -278,9 +278,9 @@ mod tests {
 
     #[test]
     fn test_parser_read_bytes() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101010, 0b01010101],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101010, 0b01010101],
             data_bits_len: 16,
             refs: TonCellRefsStore::new(),
         };
@@ -293,9 +293,9 @@ mod tests {
 
     #[test]
     fn test_parser_read_num() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101010, 0b01010101],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101010, 0b01010101],
             data_bits_len: 16,
             refs: TonCellRefsStore::new(),
         };
@@ -311,9 +311,9 @@ mod tests {
 
     #[test]
     fn test_parser_read_num_unaligned() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b0001_0001, 0b0000_0000, 0b1010_0000],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b0001_0001, 0b0000_0000, 0b1010_0000],
             data_bits_len: 19,
             refs: TonCellRefsStore::new(),
         };
@@ -329,9 +329,9 @@ mod tests {
 
     #[test]
     fn test_parser_read_rest() -> anyhow::Result<()> {
-        let cell_slice = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b10101010, 0b01010101],
+        let cell_slice = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b10101010, 0b01010101],
             data_bits_len: 16,
             refs: TonCellRefsStore::new(),
         };

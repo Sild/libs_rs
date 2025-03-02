@@ -3,7 +3,6 @@ use crate::cell::meta::level_mask::LevelMask;
 use crate::cell::ton_hash::TonHash;
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::Arc;
-use smallvec::SmallVec;
 
 pub type TonCellRef = Arc<dyn TonCell>;
 pub type TonCellRefsStore = Vec<TonCellRef>;
