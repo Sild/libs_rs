@@ -2,17 +2,20 @@ use crate::cell::meta::cell_meta::CellMeta;
 use crate::cell::meta::level_mask::LevelMask;
 use crate::cell::ton_hash::TonHash;
 use std::fmt::{Debug, Display, Formatter};
+use std::sync::Arc;
+use smallvec::SmallVec;
 
-pub type ArcCell = std::sync::Arc<dyn TonCell>;
+pub type TonCellRef = Arc<dyn TonCell>;
+pub type TonCellRefsStore = SmallVec<TonCellRef, 4>;
+
 pub trait TonCell: Debug {
     // raw data access
     fn get_meta(&self) -> &CellMeta;
     fn get_data(&self) -> &[u8];
     fn get_data_bits_len(&self) -> usize;
-    fn get_ref(&self, index: usize) -> Option<&dyn TonCell>;
+    fn get_refs(&self) -> &[TonCellRef];
 
-    // wrappers over meta
-    fn refs_count(&self) -> usize { self.get_meta().refs_count }
+    // handy wrappers over meta
     fn hash(&self) -> &TonHash { self.hash_for_level(LevelMask::MAX_LEVEL) }
     fn hash_for_level(&self, level: LevelMask) -> &TonHash { &self.get_meta().hashes[level.mask() as usize] }
 }
@@ -38,7 +41,8 @@ pub fn write_cell_display(f: &mut Formatter<'_>, cell: &dyn TonCell, indent_leve
         data_display.push_str("");
     };
 
-    if cell.get_ref(0).is_none() {
+    let refs = cell.get_refs();
+    if refs.is_empty() {
         // Compact format for cells without references
         writeln!(
             f,
@@ -58,10 +62,8 @@ pub fn write_cell_display(f: &mut Formatter<'_>, cell: &dyn TonCell, indent_leve
             data_display,
             cell.get_data_bits_len()
         )?;
-        let mut ref_pos = 0;
-        while let Some(cell_ref) = cell.get_ref(ref_pos) {
-            write_cell_display(f, cell_ref, indent_level + 1)?;
-            ref_pos += 1;
+        for cell_ref in refs {
+            write_cell_display(f, cell_ref.as_ref(), indent_level + 1)?;
         }
         writeln!(f, "{}]}}", indent)
     }

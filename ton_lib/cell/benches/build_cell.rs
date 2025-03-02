@@ -7,7 +7,7 @@ const ITERATIONS_COUNT: usize = 100;
 fn cell_build_ton_lib_empty_cell() {
     for _ in 0..ITERATIONS_COUNT {
         let mut builder = TonCellBuilder::new();
-        builder.write_ref(TonCellBuilder::new().build().unwrap()).unwrap();
+        builder.write_ref(TonCellBuilder::new().build().unwrap().into_ref()).unwrap();
         let cell = builder.build().unwrap();
         black_box(cell);
     }
@@ -34,9 +34,9 @@ fn cell_build_ton_lib_data_cell() {
         builder3.write_bytes([100, 200, 255]).unwrap();
 
         let mut builder = TonCellBuilder::new();
-        builder.write_ref(builder1.build().unwrap()).unwrap();
-        builder.write_ref(builder2.build().unwrap()).unwrap();
-        builder.write_ref(builder3.build().unwrap()).unwrap();
+        builder.write_ref(builder1.build().unwrap().into_ref()).unwrap();
+        builder.write_ref(builder2.build().unwrap().into_ref()).unwrap();
+        builder.write_ref(builder3.build().unwrap().into_ref()).unwrap();
 
         let cell = builder.build().unwrap();
         black_box(cell);

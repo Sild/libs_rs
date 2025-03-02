@@ -1,16 +1,17 @@
-use crate::cell::cell_owned::{CellOwned, CellOwnedRefs};
+use crate::cell::cell_owned::{CellOwned};
 use crate::cell::meta::cell_meta::CellMeta;
 use crate::cell::meta::cell_type::CellType;
 use crate::errors::{TonCellError, TonCellResult};
 use crate::number::TonNumber;
 use bitstream_io::{BigEndian, BitWrite, BitWriter};
+use smallvec::SmallVec;
+use crate::cell::ton_cell::{TonCellRef, TonCellRefsStore};
 
 pub struct TonCellBuilder {
-    pub(super) cell_type: CellType,
+    cell_type: CellType,
     data_writer: BitWriter<Vec<u8>, BigEndian>,
-    pub(super) data_bits_len: usize,
-    pub(super) refs: CellOwnedRefs,
-    next_ref_pos: u8,
+    data_bits_len: usize,
+    refs: TonCellRefsStore,
 }
 
 impl Default for TonCellBuilder {
@@ -27,14 +28,13 @@ impl TonCellBuilder {
             cell_type,
             data_writer: bit_writer,
             data_bits_len: 0,
-            refs: [None, None, None, None],
-            next_ref_pos: 0,
+            refs: SmallVec::new(),
         }
     }
 
     pub fn build(self) -> TonCellResult<CellOwned> {
         let (mut data, data_bits_len) = build_cell_data(self.data_writer)?;
-        let meta = CellMeta::new(self.cell_type, &data, data_bits_len, &self.refs, self.next_ref_pos as usize)?;
+        let meta = CellMeta::new(self.cell_type, &data, data_bits_len, &self.refs)?;
         data.shrink_to_fit();
         Ok(CellOwned {
             meta,
@@ -82,12 +82,11 @@ impl TonCellBuilder {
         Ok(self)
     }
 
-    pub fn write_ref<T: Into<Box<CellOwned>>>(&mut self, cell: T) -> TonCellResult<&mut Self> {
-        if self.next_ref_pos >= CellMeta::CELL_MAX_REFS_COUNT {
+    pub fn write_ref(&mut self, cell: TonCellRef) -> TonCellResult<&mut Self> {
+        if self.refs.len() >= CellMeta::CELL_MAX_REFS_COUNT {
             return Err(TonCellError::BuilderRefsOverflow);
         }
-        self.refs[self.next_ref_pos as usize] = Some(cell.into());
-        self.next_ref_pos += 1;
+        self.refs.push(cell);
         Ok(self)
     }
 
@@ -116,9 +115,10 @@ fn build_cell_data(mut bit_writer: BitWriter<Vec<u8>, BigEndian>) -> TonCellResu
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
     use crate::cell::meta::level_mask::LevelMask;
-    use crate::cell::ton_cell::TonCell;
+    use crate::cell::ton_cell::{TonCell, TonCellRefsStore};
     use crate::cell::ton_hash::TonHash;
     use hex::FromHex;
     use tokio_test::{assert_err, assert_ok};
@@ -226,21 +226,20 @@ mod tests {
 
     #[test]
     fn test_builder_write_refs() -> anyhow::Result<()> {
-        let ref_cell = CellOwned {
+        let cell_ref = Arc::new(CellOwned {
             meta: CellMeta::EMPTY_CELL_META,
             data: vec![0b1111_0000],
             data_bits_len: 4,
-            refs: [None, None, None, None],
-        };
+            refs: TonCellRefsStore::new(),
+        });
 
-        let ref_cell_boxed = Box::new(ref_cell.clone());
         let mut cell_builder = TonCellBuilder::new();
-        cell_builder.write_ref(ref_cell.clone())?;
-        cell_builder.write_ref(ref_cell_boxed)?;
+        cell_builder.write_ref(cell_ref.clone())?;
+        cell_builder.write_ref(cell_ref.clone())?;
         let cell = cell_builder.build()?;
-        assert_eq!(cell.refs[0].as_ref().unwrap().data, ref_cell.data);
-        assert_eq!(cell.refs[1].as_ref().unwrap().data, ref_cell.data);
-        assert_eq!(cell.refs[2], None);
+        assert_eq!(cell.refs.len(), 2);
+        assert_eq!(cell.refs[0].get_data(), cell_ref.data);
+        assert_eq!(cell.refs[1].get_data(), cell_ref.data);
         Ok(())
     }
 
@@ -270,7 +269,7 @@ mod tests {
 
         let mut builder3 = TonCellBuilder::new();
         builder3.write_byte(0x03)?;
-        builder3.write_ref(cell5.clone())?;
+        builder3.write_ref(cell5.clone().into())?;
         let cell3 = builder3.build()?;
 
         let mut builder4 = TonCellBuilder::new();
@@ -283,19 +282,19 @@ mod tests {
 
         let mut builder1 = TonCellBuilder::new();
         builder1.write_byte(0x01)?;
-        builder1.write_ref(cell3.clone())?;
-        builder1.write_ref(cell4.clone())?;
+        builder1.write_ref(cell3.clone().into())?;
+        builder1.write_ref(cell4.clone().into())?;
         let cell1 = builder1.build()?;
 
         let mut builder0 = TonCellBuilder::new();
         builder0.write_bit(true)?;
         builder0.write_byte(0b0000_0001)?;
         builder0.write_byte(0b0000_0011)?;
-        builder0.write_ref(cell1.clone())?;
-        builder0.write_ref(cell2.clone())?;
+        builder0.write_ref(cell1.clone().into())?;
+        builder0.write_ref(cell2.clone().into())?;
         let cell0 = builder0.build()?;
 
-        assert_eq!(cell0.refs_count(), 2);
+        assert_eq!(cell0.get_refs().len(), 2);
         assert_eq!(cell0.data_bits_len, 17);
         assert_eq!(cell0.data, vec![0b1000_0000, 0b1000_0001, 0b1000_0000]);
 

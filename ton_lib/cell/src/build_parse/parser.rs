@@ -1,5 +1,5 @@
 use crate::cell::cell_owned::CellOwned;
-use crate::cell::ton_cell::TonCell;
+use crate::cell::ton_cell::{TonCellRef, TonCell};
 use crate::errors::{TonCellError, TonCellResult};
 use crate::number::TonNumber;
 use bitstream_io::{BigEndian, BitRead, BitReader};
@@ -7,7 +7,7 @@ use std::io::{Cursor, SeekFrom};
 
 pub struct TonCellParser<'a> {
     pub cell: &'a dyn TonCell,
-    pub next_ref_pos: u8,
+    pub next_ref_pos: usize,
     data_reader: BitReader<Cursor<&'a [u8]>, BigEndian>,
 }
 
@@ -69,16 +69,16 @@ impl<'a> TonCellParser<'a> {
         Ok(self.data_reader.read::<N>(bit_len)?)
     }
 
-    pub fn read_next_ref(&mut self) -> TonCellResult<&dyn TonCell> {
-        match self.cell.get_ref(self.next_ref_pos as usize) {
-            Some(cell) => {
-                self.next_ref_pos += 1;
-                Ok(cell)
-            }
-            None => Err(TonCellError::ParserRefsUnderflow {
+    pub fn read_next_ref(&mut self) -> TonCellResult<&TonCellRef> {
+        let refs = self.cell.get_refs();
+        if self.next_ref_pos == refs.len() {
+            return Err(TonCellError::ParserRefsUnderflow {
                 requested: self.next_ref_pos,
-            }),
+            });
         }
+        let cell_ref = &refs[self.next_ref_pos];
+        self.next_ref_pos += 1;
+        Ok(cell_ref)
     }
 
     pub fn read_rest_data(&mut self) -> TonCellResult<(Vec<u8>, u32)> {
@@ -138,6 +138,7 @@ mod tests {
     use crate::cell::cell_slice::CellSlice;
     use crate::cell::meta::cell_meta::CellMeta;
     use tokio_test::{assert_err, assert_ok};
+    use crate::cell::ton_cell::TonCellRefsStore;
 
     #[test]
     fn test_parser_seek_bits() -> anyhow::Result<()> {
@@ -145,7 +146,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101001, 0b01010100],
             data_bits_len: 10,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         assert_ok!(parser.seek_bits(3));
@@ -173,7 +174,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101010, 0b01010101],
             data_bits_len: 16,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         assert_eq!(parser.lookup_bits(3)?, 0b101);
@@ -191,7 +192,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101010, 0b01010101],
             data_bits_len: 16,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         for i in 0..8 {
@@ -209,7 +210,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101010, 0b01010101],
             data_bits_len: 10,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         assert_eq!(parser.data_reader.position_in_bits()?, 0);
@@ -223,21 +224,21 @@ mod tests {
 
     #[test]
     fn test_parser_read_ref() -> anyhow::Result<()> {
-        let cell_ref = CellSlice {
-            meta: &CellMeta::EMPTY_CELL_META,
-            data: &[0b11110000],
+        let cell_ref = CellOwned {
+            meta: CellMeta::EMPTY_CELL_META,
+            data: vec![0b11110000],
             data_bits_len: 0,
-            refs: [None, None, None, None],
-        };
+            refs: TonCellRefsStore::new(),
+        }.into_ref();
         let cell_slice = CellSlice {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[],
             data_bits_len: 0,
-            refs: [Some(&cell_ref), Some(&cell_ref), None, None],
+            refs: TonCellRefsStore::from(vec![cell_ref.clone(), cell_ref.clone()]),
         };
         let mut parser = TonCellParser::new(&cell_slice);
-        assert_eq!(parser.read_next_ref()?.get_data(), cell_ref.data);
-        assert_eq!(parser.read_next_ref()?.get_data(), cell_ref.data);
+        assert_eq!(parser.read_next_ref()?.get_data(), cell_ref.get_data());
+        assert_eq!(parser.read_next_ref()?.get_data(), cell_ref.get_data());
         assert!(parser.read_next_ref().is_err());
         Ok(())
     }
@@ -248,7 +249,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101010, 0b01010101],
             data_bits_len: 16,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         let mut dst = [0u8; 2];
@@ -265,7 +266,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101010, 0b01010101],
             data_bits_len: 16,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         assert_eq!(parser.read_byte()?, 0b10101010);
@@ -281,7 +282,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101010, 0b01010101],
             data_bits_len: 16,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         let mut dst = [0u8; 2];
@@ -296,7 +297,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101010, 0b01010101],
             data_bits_len: 16,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         assert_eq!(parser.read_num::<u8>(3)?, 0b101);
@@ -314,7 +315,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b0001_0001, 0b0000_0000, 0b1010_0000],
             data_bits_len: 19,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         assert_eq!(parser.read_num::<u8>(4)?, 1);
@@ -332,7 +333,7 @@ mod tests {
             meta: &CellMeta::EMPTY_CELL_META,
             data: &[0b10101010, 0b01010101],
             data_bits_len: 16,
-            refs: [None, None, None, None],
+            refs: TonCellRefsStore::new(),
         };
         let mut parser = TonCellParser::new(&cell_slice);
         assert!(parser.read_bit()?);

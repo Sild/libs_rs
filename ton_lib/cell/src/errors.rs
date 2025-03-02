@@ -9,7 +9,7 @@ pub enum TonCellError {
     #[error("New position is {new_position}, but data_bits_len is {data_bits_len}")]
     ParserBadPosition { new_position: i32, data_bits_len: u32 },
     #[error("No ref with index={requested}")]
-    ParserRefsUnderflow { requested: u8 },
+    ParserRefsUnderflow { requested: usize },
     #[error("Cell is not empty: {bits_left} bits left")]
     ParserCellNotEmpty { bits_left: u32 },
     #[error("Container is too small: {requested} bits requested, but only {available} available")]

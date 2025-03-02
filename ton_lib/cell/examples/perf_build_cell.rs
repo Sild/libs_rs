@@ -14,9 +14,9 @@ fn main() -> anyhow::Result<()> {
         builder3.write_bytes([100, 200, 255])?;
 
         let mut builder = TonCellBuilder::new();
-        builder.write_ref(builder1.build()?)?;
-        builder.write_ref(builder2.build()?)?;
-        builder.write_ref(builder3.build()?)?;
+        builder.write_ref(builder1.build()?.into())?;
+        builder.write_ref(builder2.build()?.into())?;
+        builder.write_ref(builder3.build()?.into())?;
 
         #[allow(unused)]
         let cell = builder.build()?;

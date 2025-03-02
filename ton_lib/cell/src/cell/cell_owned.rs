@@ -1,17 +1,15 @@
 use crate::cell::meta::cell_meta::CellMeta;
-use crate::cell::ton_cell::{write_cell_display, TonCell};
+use crate::cell::ton_cell::{write_cell_display, TonCellRef, TonCell, TonCellRefsStore};
 use std::fmt::Display;
-use std::ops::Deref;
-
-pub type CellOwnedRefs = [Option<Box<CellOwned>>; 4];
+use std::sync::Arc;
 
 /// Owns the data - must be used for writing
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct CellOwned {
     pub meta: CellMeta,
     pub data: Vec<u8>,
     pub data_bits_len: usize,
-    pub refs: CellOwnedRefs,
+    pub refs: TonCellRefsStore,
 }
 
 impl CellOwned {
@@ -19,18 +17,38 @@ impl CellOwned {
         meta: CellMeta::EMPTY_CELL_META,
         data: Vec::new(),
         data_bits_len: 0,
-        refs: [None, None, None, None],
+        refs: TonCellRefsStore::new(),
     };
 }
+
+unsafe impl Sync for CellOwned{}
+unsafe impl Send for CellOwned{}
 
 impl TonCell for CellOwned {
     fn get_meta(&self) -> &CellMeta { &self.meta }
     fn get_data(&self) -> &[u8] { &self.data }
     fn get_data_bits_len(&self) -> usize { self.data_bits_len }
-    fn get_ref(&self, index: usize) -> Option<&dyn TonCell> {
-        self.refs[index].as_ref().map(|x| x.deref() as &dyn TonCell)
+    fn get_refs(&self) -> &[TonCellRef] { &self.refs }
+}
+
+impl CellOwned {
+    pub fn into_ref(self) -> TonCellRef {
+        Arc::new(self)
     }
 }
+
+impl From<CellOwned> for TonCellRef {
+    fn from(value: CellOwned) -> Self {
+        Arc::new(value)
+    }
+}
+
+impl PartialEq for CellOwned {
+    fn eq(&self, other: &Self) -> bool {
+        self.hash() == other.hash()
+    }
+}
+
 
 impl Display for CellOwned {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write_cell_display(f, self, 0) }
@@ -46,14 +64,14 @@ mod tests {
             meta: CellMeta::EMPTY_CELL_META,
             data: vec![0x01, 0x02, 0x03],
             data_bits_len: 24,
-            refs: [None, None, None, None],
-        };
+            refs: TonCellRefsStore::new(),
+        }.into_ref();
 
         let _cell = CellOwned {
             meta: CellMeta::EMPTY_CELL_META,
             data: vec![0x04, 0x05, 0x06],
             data_bits_len: 24,
-            refs: [Some(Box::new(child)), None, None, None],
+            refs: TonCellRefsStore::from([child]),
         };
     }
 }
