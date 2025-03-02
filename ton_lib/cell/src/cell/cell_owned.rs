@@ -1,5 +1,5 @@
 use crate::cell::meta::cell_meta::CellMeta;
-use crate::cell::ton_cell::{write_cell_display, TonCellRef, TonCell, TonCellRefsStore};
+use crate::cell::ton_cell::{write_cell_display, ArcTonCell, TonCell, TonCellRefsStore};
 use std::fmt::Display;
 use std::sync::Arc;
 
@@ -21,34 +21,27 @@ impl CellOwned {
     };
 }
 
-unsafe impl Sync for CellOwned{}
-unsafe impl Send for CellOwned{}
+unsafe impl Sync for CellOwned {}
+unsafe impl Send for CellOwned {}
 
 impl TonCell for CellOwned {
     fn get_meta(&self) -> &CellMeta { &self.meta }
     fn get_data(&self) -> &[u8] { &self.data }
     fn get_data_bits_len(&self) -> usize { self.data_bits_len }
-    fn get_refs(&self) -> &[TonCellRef] { &self.refs }
+    fn get_refs(&self) -> &[ArcTonCell] { &self.refs }
 }
 
 impl CellOwned {
-    pub fn into_ref(self) -> TonCellRef {
-        Arc::new(self)
-    }
-}
-
-impl From<CellOwned> for TonCellRef {
-    fn from(value: CellOwned) -> Self {
-        Arc::new(value)
-    }
+    pub fn into_ref(self) -> ArcTonCell { Arc::new(self) }
 }
 
 impl PartialEq for CellOwned {
-    fn eq(&self, other: &Self) -> bool {
-        self.hash() == other.hash()
-    }
+    fn eq(&self, other: &Self) -> bool { self.hash() == other.hash() }
 }
 
+impl From<CellOwned> for ArcTonCell {
+    fn from(value: CellOwned) -> Self { Arc::new(value) }
+}
 
 impl Display for CellOwned {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write_cell_display(f, self, 0) }
@@ -65,7 +58,8 @@ mod tests {
             data: vec![0x01, 0x02, 0x03],
             data_bits_len: 24,
             refs: TonCellRefsStore::new(),
-        }.into_ref();
+        }
+        .into_ref();
 
         let _cell = CellOwned {
             meta: CellMeta::EMPTY_CELL_META,

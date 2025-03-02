@@ -1,10 +1,10 @@
-use crate::cell::cell_owned::{CellOwned};
+use crate::cell::cell_owned::CellOwned;
 use crate::cell::meta::cell_meta::CellMeta;
 use crate::cell::meta::cell_type::CellType;
+use crate::cell::ton_cell::{ArcTonCell, TonCellRefsStore};
 use crate::errors::{TonCellError, TonCellResult};
-use crate::number::TonNumber;
+use crate::numbers::TonNumber;
 use bitstream_io::{BigEndian, BitWrite, BitWriter};
-use crate::cell::ton_cell::{TonCellRef, TonCellRefsStore};
 
 pub struct TonCellBuilder {
     cell_type: CellType,
@@ -81,7 +81,7 @@ impl TonCellBuilder {
         Ok(self)
     }
 
-    pub fn write_ref(&mut self, cell: TonCellRef) -> TonCellResult<&mut Self> {
+    pub fn write_ref(&mut self, cell: ArcTonCell) -> TonCellResult<&mut Self> {
         if self.refs.len() >= CellMeta::CELL_MAX_REFS_COUNT {
             return Err(TonCellError::BuilderRefsOverflow);
         }
@@ -114,12 +114,12 @@ fn build_cell_data(mut bit_writer: BitWriter<Vec<u8>, BigEndian>) -> TonCellResu
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use super::*;
     use crate::cell::meta::level_mask::LevelMask;
     use crate::cell::ton_cell::{TonCell, TonCellRefsStore};
     use crate::cell::ton_hash::TonHash;
     use hex::FromHex;
+    use std::sync::Arc;
     use tokio_test::{assert_err, assert_ok};
 
     #[test]

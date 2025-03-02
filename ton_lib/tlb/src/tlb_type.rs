@@ -12,7 +12,7 @@ pub trait TLBType: Sized {
     fn read_def(parser: &mut TonCellParser) -> TLBResult<Self>;
     fn write_def(&self, builder: &mut TonCellBuilder) -> TLBResult<()>;
 
-    // interface part
+    // interface
     fn read(parser: &mut TonCellParser) -> TLBResult<Self> {
         Self::verify_prefix(parser)?;
         Self::read_def(parser)
@@ -46,7 +46,11 @@ pub trait TLBType: Sized {
 
     /// Serialization
     ///
-    fn to_cell(&self) -> TLBResult<CellOwned> { unimplemented!() }
+    fn to_cell(&self) -> TLBResult<CellOwned> {
+        let mut builder = TonCellBuilder::new();
+        self.write(&mut builder)?;
+        Ok(builder.build()?)
+    }
 
     // fn to_boc(&self, add_crc32: bool) -> Result<Vec<u8>, TonCellError> {
     //     unimplemented!()

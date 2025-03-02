@@ -4,19 +4,23 @@ use crate::cell::ton_hash::TonHash;
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::Arc;
 
-pub type TonCellRef = Arc<dyn TonCell>;
-pub type TonCellRefsStore = Vec<TonCellRef>;
+pub type ArcTonCell = Arc<dyn TonCell>;
+pub type TonCellRefsStore = Vec<ArcTonCell>;
 
 pub trait TonCell: Debug {
     // raw data access
     fn get_meta(&self) -> &CellMeta;
     fn get_data(&self) -> &[u8];
     fn get_data_bits_len(&self) -> usize;
-    fn get_refs(&self) -> &[TonCellRef];
+    fn get_refs(&self) -> &[ArcTonCell];
 
     // handy wrappers over meta
     fn hash(&self) -> &TonHash { self.hash_for_level(LevelMask::MAX_LEVEL) }
     fn hash_for_level(&self, level: LevelMask) -> &TonHash { &self.get_meta().hashes[level.mask() as usize] }
+}
+
+impl PartialEq for dyn TonCell {
+    fn eq(&self, other: &Self) -> bool { self.hash() == other.hash() }
 }
 
 impl Display for dyn TonCell {

@@ -1,3 +1,1 @@
-pub struct TonWallet {
-    
-}
+pub struct TonWallet {}

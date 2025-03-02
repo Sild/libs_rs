@@ -1,7 +1,7 @@
 [package]
 name = "ton_lib_tlb"
 version = "0.0.1"
-description = "TLBObject trait and utility to generate rust objects from TLB"
+description = "serde for TLB entities"
 keywords = ["ton", "the-open-network", "blockchain", "crypto"]
 edition.workspace = true
 authors.workspace = true
@@ -14,3 +14,7 @@ publish = true
 ton_lib_cell = { path = "../cell" }
 hex = "0.4.3"
 thiserror = "2.0.11"
+anyhow = "1.0.93"
+
+[dev-dependencies]
+tokio-test = "0.4"

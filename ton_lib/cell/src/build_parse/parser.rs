@@ -1,7 +1,6 @@
-use crate::cell::cell_owned::CellOwned;
-use crate::cell::ton_cell::{TonCellRef, TonCell};
+use crate::cell::ton_cell::{ArcTonCell, TonCell};
 use crate::errors::{TonCellError, TonCellResult};
-use crate::number::TonNumber;
+use crate::numbers::TonNumber;
 use bitstream_io::{BigEndian, BitRead, BitReader};
 use std::io::{Cursor, SeekFrom};
 
@@ -69,7 +68,7 @@ impl<'a> TonCellParser<'a> {
         Ok(self.data_reader.read::<N>(bit_len)?)
     }
 
-    pub fn read_next_ref(&mut self) -> TonCellResult<&TonCellRef> {
+    pub fn read_next_ref(&mut self) -> TonCellResult<&ArcTonCell> {
         let refs = self.cell.get_refs();
         if self.next_ref_pos == refs.len() {
             return Err(TonCellError::ParserRefsUnderflow {
@@ -88,8 +87,6 @@ impl<'a> TonCellParser<'a> {
         self.read_bits(bits_left, &mut data)?;
         Ok((data, bits_left))
     }
-
-    pub fn read_rest_cell(&mut self) -> TonCellResult<CellOwned> { todo!() }
 
     pub fn ensure_empty(&mut self) -> TonCellResult<()> {
         let bits_left = self.data_bits_left()?;
@@ -136,9 +133,10 @@ impl<'a> TonCellParser<'a> {
 mod tests {
     use super::*;
     // use crate::cell::cell_slice::CellSlice;
+    use crate::cell::cell_owned::CellOwned;
     use crate::cell::meta::cell_meta::CellMeta;
-    use tokio_test::{assert_err, assert_ok};
     use crate::cell::ton_cell::TonCellRefsStore;
+    use tokio_test::{assert_err, assert_ok};
 
     #[test]
     fn test_parser_seek_bits() -> anyhow::Result<()> {
@@ -229,7 +227,8 @@ mod tests {
             data: vec![0b11110000],
             data_bits_len: 0,
             refs: TonCellRefsStore::new(),
-        }.into_ref();
+        }
+        .into_ref();
         let cell_slice = CellOwned {
             meta: CellMeta::EMPTY_CELL_META,
             data: vec![],
