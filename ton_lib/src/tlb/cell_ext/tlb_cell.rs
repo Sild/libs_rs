@@ -47,6 +47,8 @@ impl TLBType for CellOwned {
         }
         Ok(())
     }
+
+    fn to_cell(&self) -> Result<CellOwned, TonLibError> { Ok(self.clone()) }
 }
 
 impl TLBType for TonCellRef {

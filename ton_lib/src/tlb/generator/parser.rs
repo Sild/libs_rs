@@ -1,11 +1,8 @@
-
 #[cfg(test)]
 mod tests {
     use crate::tlb::predefined::BLOCK_TLB;
 
-
     extern crate colog;
-
 
     #[test]
     fn test_tlb_parser() -> anyhow::Result<()> {
@@ -20,7 +17,7 @@ mod tests {
 
         let mut line_num = 1;
         for line in &tlb_split_line {
-            log::info!("[{line_num}] {line}", );
+            log::info!("[{line_num}] {line}",);
             line_num += 1;
             if line_num >= 100 {
                 break;
