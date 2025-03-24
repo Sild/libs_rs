@@ -15,7 +15,8 @@ pub struct StateInit {
     pub tick_tock: Option<TickTock>,
     pub code: Option<TonCellRef>,
     pub data: Option<TonCellRef>,
-    pub library: HashMap<TonHash, CellOwned>,
+    // pub library: HashMap<TonHash, CellOwned>,
+    pub library: Option<TonCellRef>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -31,7 +32,8 @@ impl StateInit {
             tick_tock: None,
             code: Some(code),
             data: Some(data),
-            library: HashMap::new(),
+            // library: HashMap::new(),
+            library: None,
         }
     }
 }
