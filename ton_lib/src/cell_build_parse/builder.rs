@@ -37,14 +37,14 @@ impl CellBuilder {
         Ok(CellOwned::new(meta, data, data_bits_len, self.refs))
     }
 
-    pub fn write_bit(&mut self, data: bool) -> Result<&mut Self, TonLibError> {
+    pub fn write_bit(&mut self, data: bool) -> Result<(), TonLibError> {
         self.ensure_capacity(1)?;
         self.data_writer.write_bit(data)?;
         self.data_bits_len += 1;
-        Ok(self)
+        Ok(())
     }
 
-    pub fn write_bits<T: AsRef<[u8]>>(&mut self, data: T, bits_len: u32) -> Result<&mut Self, TonLibError> {
+    pub fn write_bits<T: AsRef<[u8]>>(&mut self, data: T, bits_len: u32) -> Result<(), TonLibError> {
         self.ensure_capacity(bits_len)?;
         let data_ref = data.as_ref();
 
@@ -54,39 +54,37 @@ impl CellBuilder {
         if rest_bits_len != 0 {
             self.data_writer.write(rest_bits_len, data_ref[full_bytes] >> (8 - rest_bits_len))?;
         }
-
-        Ok(self)
+        Ok(())
     }
 
-    pub fn write_byte(&mut self, data: u8) -> Result<&mut Self, TonLibError> { self.write_bits([data], 8) }
+    pub fn write_byte(&mut self, data: u8) -> Result<(), TonLibError> { self.write_bits([data], 8) }
 
-    pub fn write_bytes<T: AsRef<[u8]>>(&mut self, data: T) -> Result<&mut Self, TonLibError> {
+    pub fn write_bytes<T: AsRef<[u8]>>(&mut self, data: T) -> Result<(), TonLibError> {
         let data_ref = data.as_ref();
-        self.write_bits(data_ref, data_ref.len() as u32 * 8)?;
-        Ok(self)
+        self.write_bits(data_ref, data_ref.len() as u32 * 8)
     }
 
-    pub fn write_num<N: TonNumber>(&mut self, data: N, bits_len: u32) -> Result<&mut Self, TonLibError> {
+    pub fn write_num<N: TonNumber>(&mut self, data: N, bits_len: u32) -> Result<(), TonLibError> {
         self.ensure_capacity(bits_len)?;
         let unsigned_data = data.to_unsigned();
         self.data_writer.write(bits_len, unsigned_data)?;
-        Ok(self)
+        Ok(())
     }
 
-    pub fn write_cell(&mut self, cell: &dyn TonCell) -> Result<&mut Self, TonLibError> {
+    pub fn write_cell(&mut self, cell: &dyn TonCell) -> Result<(), TonLibError> {
         self.write_bits(cell.get_data(), cell.get_data_bits_len() as u32)?;
         for i in 0..cell.refs_count() {
             self.write_ref(cell.get_ref(i).unwrap().clone())?;
         }
-        Ok(self)
+        Ok(())
     }
 
-    pub fn write_ref(&mut self, cell: TonCellRef) -> Result<&mut Self, TonLibError> {
+    pub fn write_ref(&mut self, cell: TonCellRef) -> Result<(), TonLibError> {
         if self.refs.len() >= CellMeta::CELL_MAX_REFS_COUNT {
             return Err(TonLibError::BuilderRefsOverflow);
         }
         self.refs.push(cell);
-        Ok(self)
+        Ok(())
     }
 
     fn ensure_capacity(&mut self, bits_len: u32) -> Result<(), TonLibError> {
