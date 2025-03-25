@@ -35,38 +35,32 @@ impl CellBuilder {
         Ok(CellOwned::new(meta, data, data_bits_len, self.refs))
     }
 
-    /// if data.len() * 8 >= bits_len, writes only first bits_len bits
-    /// if data.len() * 8 < bits_len, writes zeros to leading bits
-    pub fn write_bits<T: AsRef<[u8]>>(&mut self, data: T, bits_len: u32) -> Result<(), TonLibError> {
-        self.ensure_capacity(bits_len)?;
-        let data_ref = data.as_ref();
+    pub fn write_bit(&mut self, data: bool) -> Result<(), TonLibError> {
+        self.check_capacity(1)?;
+        self.data_writer.write_bit(data)?;
+        Ok(())
+    }
 
-        // corner-case for 1 bit
-        if bits_len == 1 {
-            self.data_writer.write_bit(data_ref.first().unwrap_or(&0u8) != &0)?;
-            self.data_bits_len += 1;
-            return Ok(());
+    pub fn write_bits<T: AsRef<[u8]>>(&mut self, data: T, bits_len: u32) -> Result<(), TonLibError> {
+        self.check_capacity(bits_len)?;
+        let data_ref = data.as_ref();
+        
+        if (bits_len + 7) / 8 != data_ref.len() as u32 {
+            return Err(TonLibError::BuilderBitsMismatch {
+                bytes_to_write: data_ref.len() as u32,
+                bits_to_write: bits_len,
+            });
         }
 
-        if data_ref.len() * 8 >= bits_len as usize {
-            let full_bytes = bits_len as usize / 8;
-            self.data_writer.write_bytes(&data_ref[0..full_bytes])?;
-            let rest_bits_len = bits_len % 8;
-            if rest_bits_len != 0 {
-                self.data_writer.write(rest_bits_len, data_ref[full_bytes] >> (8 - rest_bits_len))?;
-            }
-        } else {
-            let padding_bits = bits_len - data_ref.len() as u32 * 8;
-            self.data_writer.write(padding_bits, 0)?;
-            self.data_writer.write_bytes(data_ref)?;
+        let full_bytes = bits_len as usize / 8;
+        self.data_writer.write_bytes(&data_ref[0..full_bytes])?;
+        let rest_bits_len = bits_len % 8;
+        if rest_bits_len != 0 {
+            self.data_writer.write(rest_bits_len, data_ref[full_bytes] >> (8 - rest_bits_len))?;
         }
         self.data_bits_len += bits_len as usize;
         Ok(())
     }
-
-    pub fn write_bit(&mut self, data: bool) -> Result<(), TonLibError> { self.write_bits([data as u8], 1) }
-
-    pub fn write_byte(&mut self, data: u8) -> Result<(), TonLibError> { self.write_bits([data], 8) }
 
     pub fn write_bytes<T: AsRef<[u8]>>(&mut self, data: T) -> Result<(), TonLibError> {
         let data_ref = data.as_ref();
@@ -74,31 +68,8 @@ impl CellBuilder {
         Ok(())
     }
 
-    pub fn write_num<N: TonNumber>(&mut self, data: N, bits_len: u32) -> Result<(), TonLibError> {
-        self.ensure_capacity(bits_len)?;
-        let unsigned_data = data.to_unsigned();
-        self.data_writer.write(bits_len, unsigned_data)?;
-        self.data_bits_len += bits_len as usize;
-        Ok(())
-    }
-
-    pub fn write_bignum<N: TonBigNumber>(&mut self, data: &N, bits_len: u32) -> Result<(), TonLibError> {
-        self.ensure_capacity(bits_len)?;
-        let actual_bits = data.bits_len();
-        if actual_bits > bits_len {
-            return Err(TonLibError::BuilderBigNumOverflow {
-                val: format!("{data}"),
-                bits: bits_len,
-            });
-        }
-        if N::SIGNED {
-            self.data_writer.write_bit(data.is_negative())?;
-        }
-        let bytes = data.to_unsigned_bytes_be();
-        println!("{bytes:?}");
-        self.write_bits(data.to_unsigned_bytes_be(), bits_len)?;
-        self.data_bits_len += bits_len as usize;
-        Ok(())
+    pub fn write_byte(&mut self, data: u8) -> Result<(), TonLibError> {
+        self.write_bytes([data])
     }
 
     pub fn write_cell(&mut self, cell: &dyn TonCell) -> Result<(), TonLibError> {
@@ -117,14 +88,48 @@ impl CellBuilder {
         Ok(())
     }
 
-    fn ensure_capacity(&mut self, bits_len: u32) -> Result<(), TonLibError> {
-        let bits_left = CellMeta::CELL_MAX_DATA_BITS_LEN - self.data_bits_len as u32;
-        if bits_len <= bits_left {
+    pub fn write_num<N: TonNumber>(&mut self, data: N, bits_len: u32) -> Result<(), TonLibError> {
+        self.check_capacity(bits_len)?;
+        let unsigned_data = data.to_unsigned();
+        self.data_writer.write(bits_len, unsigned_data)?;
+        Ok(())
+    }
+
+    pub fn write_bignum<N: TonBigNumber>(&mut self, data: &N, bits_len: u32) -> Result<(), TonLibError> {
+        self.check_capacity(bits_len)?;
+        let actual_bits = data.min_bits_len();
+        if actual_bits > bits_len {
+            return Err(TonLibError::BuilderNumberBitsMismatch {
+                number: format!("{data}"),
+                bits: bits_len,
+            });
+        }
+
+        if data.is_negative() && bits_len != 257 {
+            return Err(TonLibError::BuilderNumberBitsMismatch {
+                number: format!("{data}"),
+                bits: bits_len,
+            });
+        }
+
+        if N::SIGNED {
+            self.data_writer.write_bit(data.is_negative())?;
+        }
+        let bytes = data.to_unsigned_bytes_be();
+        println!("{bytes:?}");
+        self.write_bits(data.to_unsigned_bytes_be(), bits_len - 1)?;
+        Ok(())
+    }
+
+    fn check_capacity(&mut self, bits_len: u32) -> Result<(), TonLibError> {
+        let new_bits_len = self.data_bits_len as u32 + bits_len;
+        if new_bits_len <= CellMeta::CELL_MAX_DATA_BITS_LEN {
+            self.data_bits_len = new_bits_len as usize;
             return Ok(());
         }
         Err(TonLibError::BuilderDataOverflow {
             req: bits_len,
-            left: bits_left,
+            left: CellMeta::CELL_MAX_DATA_BITS_LEN - bits_len,
         })
     }
 }
@@ -374,9 +379,9 @@ mod tests {
     fn test_builder_write_bits_not_enough() -> anyhow::Result<()> {
         let mut builder = CellBuilder::new();
         let data = vec![1u8; 2];
-        builder.write_bits(&data, 32)?;
-        let cell = builder.build()?;
-        assert_eq!(cell.get_data(), [0u8, 0, 1, 1]);
+        assert_err!(builder.write_bits(&data, 32));
+        // let cell = builder.build()?;
+        // assert_eq!(cell.get_data(), [0u8, 0, 1, 1]);
         Ok(())
     }
 
@@ -384,9 +389,9 @@ mod tests {
     fn test_builder_write_bits_not_enough_unaligned() -> anyhow::Result<()> {
         let mut builder = CellBuilder::new();
         let data = vec![1u8; 2];
-        builder.write_bits(&data, 33)?;
-        let cell = builder.build()?;
-        assert_eq!(cell.get_data(), [0u8, 0, 0, 128, 128]);
+        assert_err!(builder.write_bits(&data, 33));
+        // let cell = builder.build()?;
+        // assert_eq!(cell.get_data(), [0u8, 0, 0, 128, 128]);
         Ok(())
     }
 
@@ -395,27 +400,25 @@ mod tests {
     fn test_builder_write_bignum_bigint() -> anyhow::Result<()> {
         let value = BigInt::from_str("3")?;
         let mut builder = CellBuilder::new();
+        builder.write_bits([0], 7)?; // for pretty printing
         builder.write_bignum(&value, 33)?;
         let cell = builder.build()?;
-        println!("{:?}", cell.get_data());
-        let written = BigInt::from_bytes_be(num_bigint::Sign::Plus, cell.get_data());
-        assert_eq!(written, value);
+        assert_eq!(cell.get_data(), [0, 0, 0, 0, 3]);
 
         // 256 bits (+ sign)
         let value = BigInt::from_str("97887266651548624282413032824435501549503168134499591480902563623927645013201")?;
-        let mut writer = CellBuilder::new();
-        writer.write_bignum(&value, 257)?;
-        let cell = writer.build()?;
-        let written = BigInt::from_bytes_be(num_bigint::Sign::Plus, cell.get_data());
-        assert_eq!(written, value);
+        let mut builder = CellBuilder::new();
+        builder.write_bits([0], 7)?; // for pretty printing
+        builder.write_bignum(&value, 257)?;
+        let cell = builder.build()?;
+        assert_eq!(cell.get_data(), [0, 216, 106, 58, 195, 97, 8, 173, 64, 195, 26, 52, 186, 72, 230, 253, 248, 12, 245, 147, 137, 170, 38, 117, 66, 220, 74, 104, 103, 119, 137, 4, 209]);
 
         let value = BigInt::from_str("-5")?;
-        let mut writer = CellBuilder::new();
-        writer.write_bignum(&value, 5)?;
-        let cell = writer.build()?;
-        let written = BigInt::from_bytes_be(num_bigint::Sign::Plus, &cell.get_data()[1..]);
-        let expected = BigInt::from_bytes_be(num_bigint::Sign::Plus, &[0xB0u8]);
-        assert_eq!(written, expected);
+        let mut builder = CellBuilder::new();
+        builder.write_bits([0], 7)?; // for pretty printing
+        builder.write_bignum(&value, 257)?;
+        let cell = builder.build()?;
+        assert_eq!(cell.get_data(), [0, 0, 0, 0, 5]);
         Ok(())
     }
 

@@ -9,7 +9,7 @@ impl TonBigNumber for BigInt {
         num_traits::Signed::is_negative(self)
     }
 
-    fn bits_len(&self) -> u32 {
+    fn min_bits_len(&self) -> u32 {
         // 1 extra bit for sign
         if self.is_zero() {
             return 2;
@@ -18,7 +18,11 @@ impl TonBigNumber for BigInt {
     }
 
     fn to_unsigned_bytes_be(&self) -> Vec<u8> {
-        BigInt::to_signed_bytes_be(self)
+        if self.is_negative() {
+            return self.to_signed_bytes_be();
+        }
+        BigInt::to_bytes_be(self).1
+        
     }
 
     fn from_unsigned_bytes_be(negative: bool, bytes: &[u8]) -> Self
@@ -36,7 +40,7 @@ impl TonBigNumber for BigUint {
         false
     }
 
-    fn bits_len(&self) -> u32 {
+    fn min_bits_len(&self) -> u32 {
         if self.is_zero() {
             return 1;
         }
