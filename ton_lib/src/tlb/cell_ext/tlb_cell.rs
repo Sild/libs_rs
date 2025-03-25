@@ -3,8 +3,8 @@ use crate::cell::meta::cell_meta::CellMeta;
 use crate::cell::meta::cell_type::CellType;
 use crate::cell::ton_cell::{TonCell, TonCellRef};
 use crate::cell::ton_hash::TonHash;
-use crate::cell_build_parse::builder::CellBuilder;
-use crate::cell_build_parse::parser::CellParser;
+use crate::cell::build_parse::builder::CellBuilder;
+use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 use crate::tlb::tlb_type::TLBType;
 

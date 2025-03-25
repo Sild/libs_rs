@@ -1,6 +1,6 @@
 use crate::cell::ton_cell::TonCellRef;
-use crate::cell_build_parse::builder::CellBuilder;
-use crate::cell_build_parse::parser::CellParser;
+use crate::cell::build_parse::builder::CellBuilder;
+use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 use crate::tlb::primitives::numbers::TLBNumber;
 use crate::tlb::tlb_type::TLBType;
@@ -59,9 +59,10 @@ impl TLBType for StateInit {
 
 impl TLBType for TickTock {
     fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
-        let tick = parser.read_bit()?;
-        let tock = parser.read_bit()?;
-        Ok(TickTock { tick, tock })
+        Ok(TickTock {
+            tick: TLBType::read(parser)?,
+            tock: TLBType::read(parser)?,
+        })
     }
 
     fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {

@@ -1,8 +1,8 @@
 use crate::cell::cell_owned::CellOwned;
 use crate::cell::ton_cell::TonCell;
 use crate::cell::ton_hash::TonHash;
-use crate::cell_build_parse::builder::CellBuilder;
-use crate::cell_build_parse::parser::CellParser;
+use crate::cell::build_parse::builder::CellBuilder;
+use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 
 pub trait TLBType: Sized {

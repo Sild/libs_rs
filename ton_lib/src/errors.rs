@@ -24,17 +24,19 @@ pub enum TonLibError {
     BuilderDataOverflow { req: u32, left: u32 },
     #[error("BuilderError: Can't write ref - 4 refs are written already")]
     BuilderRefsOverflow,
+    #[error("BuilderError: Can't fit {val} into {bits} bits")]
+    BuilderBigNumOverflow { val: String, bits: u32 },
     #[error("BuilderError: Cell validation error: {0}")]
     BuilderMeta(String),
-
+    
     // boc
     #[error("CellType: Unexpected CellType tag: {0}")]
     CellTypeTag(u8),
-    #[error("BOC: Expected 1 root, got {0}")]
+    #[error("BOCError: Expected 1 root, got {0}")]
     BocSingleRoot(usize),
-    #[error("BOC: Unexpected magic: {0}")]
+    #[error("BOCError: Unexpected magic: {0}")]
     BocWrongMagic(u32),
-    #[error("BocCustom: {0}")]
+    #[error("BOCError: {0}")]
     BocCustom(String),
 
     // tlb
