@@ -24,8 +24,8 @@ pub enum TonLibError {
     BuilderDataOverflow { req: u32, left: u32 },
     #[error("BuilderError: Can't write ref - 4 refs are written already")]
     BuilderRefsOverflow,
-    #[error("BuilderError: Can't write {bytes_to_write} bytes as {bits_to_write} bits")]
-    BuilderBitsMismatch { bytes_to_write: u32, bits_to_write: u32 },
+    #[error("BuilderError: Can't extract {required_bits} bits from {given} bytes")]
+    BuilderNotEnoughData { required_bits: u32, given: u32},
     #[error("BuilderError: Can't write number {number} as {bits} bits")]
     BuilderNumberBitsMismatch { number: String, bits: u32 },
     #[error("BuilderError: Cell validation error: {0}")]

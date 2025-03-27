@@ -7,9 +7,11 @@ pub trait TonNumber: Numeric + Display {
     fn to_unsigned(&self) -> Self::UnsignedType;
 }
 
-pub trait TonBigNumber: Display {
+pub trait TonBigNumber: Display + Sized {
     const SIGNED: bool;
     fn is_negative(&self) -> bool;
+    fn is_zero(&self) -> bool;
+    /// must includes sign bit if SIGNED=true
     fn min_bits_len(&self) -> u32;
     fn to_unsigned_bytes_be(&self) -> Vec<u8>;
     fn from_unsigned_bytes_be(negative: bool, bytes: &[u8]) -> Self;
