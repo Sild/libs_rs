@@ -1,7 +1,7 @@
-use crate::cell::cell_owned::CellOwned;
-use crate::cell::ton_number::traits::TonNumber;
-use crate::cell::ton_cell::{TonCell, TonCellRef};
 use crate::cell::build_parse::builder::CellBuilder;
+use crate::cell::cell_owned::CellOwned;
+use crate::cell::ton_cell::{TonCell, TonCellRef};
+use crate::cell::ton_number::traits::TonNumber;
 use crate::errors::TonLibError;
 use bitstream_io::{BigEndian, BitRead, BitReader};
 use std::io::{Cursor, SeekFrom};
@@ -138,11 +138,11 @@ impl<'a> CellParser<'a> {
 mod tests {
     use super::*;
     // use crate::cell::cell_slice::CellSlice;
+    use crate::cell::build_parse::builder::CellBuilder;
     use crate::cell::cell_owned::CellOwned;
     use crate::cell::meta::cell_meta::CellMeta;
     use crate::cell::meta::cell_type::CellType;
     use crate::cell::ton_cell::TonCellRefsStore;
-    use crate::cell::build_parse::builder::CellBuilder;
     use tokio_test::{assert_err, assert_ok};
 
     #[test]

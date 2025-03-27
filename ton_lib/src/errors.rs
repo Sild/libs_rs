@@ -25,12 +25,12 @@ pub enum TonLibError {
     #[error("BuilderError: Can't write ref - 4 refs are written already")]
     BuilderRefsOverflow,
     #[error("BuilderError: Can't extract {required_bits} bits from {given} bytes")]
-    BuilderNotEnoughData { required_bits: u32, given: u32},
+    BuilderNotEnoughData { required_bits: u32, given: u32 },
     #[error("BuilderError: Can't write number {number} as {bits} bits")]
     BuilderNumberBitsMismatch { number: String, bits: u32 },
     #[error("BuilderError: Cell validation error: {0}")]
     BuilderMeta(String),
-    
+
     // boc
     #[error("CellType: Unexpected CellType tag: {0}")]
     CellTypeTag(u8),

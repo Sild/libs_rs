@@ -30,6 +30,7 @@ num-bigint = "0.4"
 num-traits = "0.2.19"
 
 [dev-dependencies]
+ton_lib = { path = ".", features = ["num-bigint", "fastnum"] }
 anyhow = "1.0"
 tokio-test = "0.4"
 tonlib-core = "0.24.2"

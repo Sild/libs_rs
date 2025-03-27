@@ -1,1 +1,1 @@
-pub const BLOCK_TLB: &'static str = include_str!("../../resources/tlb/block.tlb");
+pub const BLOCK_TLB: &str = include_str!("../../resources/tlb/block.tlb");

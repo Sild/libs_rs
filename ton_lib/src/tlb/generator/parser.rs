@@ -9,6 +9,7 @@ mod tests {
         colog::init();
         let tlb_plain = BLOCK_TLB.to_string();
         let mut tlb_split_line: Vec<String> = tlb_plain.split(";").map(|x| x.to_string()).collect();
+        #[allow(clippy::needless_range_loop)]
         for i in 0..tlb_split_line.len() {
             let cur_line = tlb_split_line[i].to_string();
             let new_line = cur_line.replace("\n", "");

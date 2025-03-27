@@ -1,6 +1,6 @@
 pub use bitstream_io::Numeric; // re-export
-use std::fmt::Display;
 pub use num_traits::Num;
+use std::fmt::Display;
 
 pub trait TonNumber: Numeric + Display {
     type UnsignedType: Numeric;

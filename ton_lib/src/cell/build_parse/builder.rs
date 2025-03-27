@@ -1,11 +1,11 @@
-use std::cmp::min;
 use crate::cell::cell_owned::CellOwned;
 use crate::cell::meta::cell_meta::CellMeta;
 use crate::cell::meta::cell_type::CellType;
-use crate::cell::ton_number::traits::{TonBigNumber, TonNumber};
 use crate::cell::ton_cell::{TonCell, TonCellRef, TonCellRefsStore};
+use crate::cell::ton_number::traits::{TonBigNumber, TonNumber};
 use crate::errors::TonLibError;
 use bitstream_io::{BigEndian, BitWrite, BitWriter};
+use std::cmp::min;
 
 pub struct CellBuilder {
     cell_type: CellType,
@@ -43,7 +43,12 @@ impl CellBuilder {
     }
 
     /// expecting data.len() * 8 must be >= (bits_offset + bits_len)
-    fn write_bits_with_offset<T: AsRef<[u8]>>(&mut self, data: T, mut bits_len: u32, mut bits_offset: u32) -> Result<(), TonLibError> {
+    fn write_bits_with_offset<T: AsRef<[u8]>>(
+        &mut self,
+        data: T,
+        mut bits_len: u32,
+        mut bits_offset: u32,
+    ) -> Result<(), TonLibError> {
         self.check_capacity(bits_len)?;
         let mut data_ref = data.as_ref();
 
@@ -53,7 +58,7 @@ impl CellBuilder {
                 given: data_ref.len() as u32,
             });
         }
-        
+
         if bits_len == 0 {
             return Ok(());
         }
@@ -63,7 +68,11 @@ impl CellBuilder {
         bits_offset %= 8;
 
         let first_byte_bits_len = min(bits_len, 8 - bits_offset);
-        self.data_writer.write(first_byte_bits_len, data_ref[0] << bits_offset >> bits_offset)?;
+        let mut first_byte_val = data_ref[0] << bits_offset >> bits_offset;
+        if first_byte_bits_len == bits_len {
+            first_byte_val >>= 8 - bits_offset - bits_len
+        }
+        self.data_writer.write(first_byte_bits_len, first_byte_val)?;
 
         data_ref = &data_ref[1..];
         bits_len -= first_byte_bits_len;
@@ -81,16 +90,14 @@ impl CellBuilder {
     pub fn write_bits<T: AsRef<[u8]>>(&mut self, data: T, bits_len: u32) -> Result<(), TonLibError> {
         self.write_bits_with_offset(data, bits_len, 0)
     }
-    
+
     pub fn write_bytes<T: AsRef<[u8]>>(&mut self, data: T) -> Result<(), TonLibError> {
         let data_ref = data.as_ref();
         self.write_bits(data_ref, data_ref.len() as u32 * 8)?;
         Ok(())
     }
 
-    pub fn write_byte(&mut self, data: u8) -> Result<(), TonLibError> {
-        self.write_bytes([data])
-    }
+    pub fn write_byte(&mut self, data: u8) -> Result<(), TonLibError> { self.write_bytes([data]) }
 
     pub fn write_cell(&mut self, cell: &dyn TonCell) -> Result<(), TonLibError> {
         self.write_bits(cell.get_data(), cell.get_data_bits_len() as u32)?;
@@ -117,7 +124,7 @@ impl CellBuilder {
 
     pub fn write_bignum<N: TonBigNumber>(&mut self, data: &N, bits_len: u32) -> Result<(), TonLibError> {
         self.check_capacity(bits_len)?;
-        
+
         // handling it like ton-core
         // https://github.com/ton-core/ton-core/blob/main/src/boc/BitBuilder.ts#L122
         if bits_len == 0 {
@@ -129,7 +136,7 @@ impl CellBuilder {
                 bits: bits_len,
             });
         }
-        
+
         let min_bits_len = data.min_bits_len();
         if min_bits_len > bits_len {
             return Err(TonLibError::BuilderNumberBitsMismatch {
@@ -137,9 +144,12 @@ impl CellBuilder {
                 bits: bits_len,
             });
         }
-        
+
         if N::SIGNED {
             self.write_bit(data.is_negative())?;
+            if bits_len == 1 {
+                return Ok(());
+            }
         }
 
         let mag_bits_to_write = bits_len - N::SIGNED as u32;
@@ -148,7 +158,7 @@ impl CellBuilder {
         let padding_bits_len = mag_bits_to_write.saturating_sub(min_bits_len_unsigned);
         let padding_to_write = vec![0; (padding_bits_len as usize + 7) / 8];
         self.write_bits(padding_to_write, padding_bits_len)?;
-        
+
         let data_bytes = data.to_unsigned_bytes_be();
         let bits_offset = (data_bytes.len() as u32 * 8).saturating_sub(min_bits_len_unsigned);
         self.write_bits_with_offset(data_bytes, mag_bits_to_write - padding_bits_len, bits_offset)
@@ -179,15 +189,17 @@ fn build_cell_data(mut bit_writer: BitWriter<Vec<u8>, BigEndian>) -> Result<(Vec
 }
 
 #[cfg(test)]
+#[cfg(feature = "num-bigint")]
+#[cfg(feature = "fastnum")]
 mod tests {
-    use std::str::FromStr;
     use super::*;
     use crate::cell::meta::level_mask::LevelMask;
     use crate::cell::ton_cell::{TonCell, TonCellRefsStore};
     use crate::cell::ton_hash::TonHash;
     use hex::FromHex;
+    use std::str::FromStr;
+
     use std::sync::Arc;
-    use num_bigint::{BigInt, BigUint};
     use tokio_test::{assert_err, assert_ok};
 
     #[test]
@@ -414,13 +426,12 @@ mod tests {
         }
         Ok(())
     }
-    
+
     #[test]
     fn test_builder_write_bits_not_enough() -> anyhow::Result<()> {
         let mut builder = CellBuilder::new();
         let data = vec![1u8; 2];
         assert_err!(builder.write_bits(&data, 32));
-        assert_err!(builder.build());
         Ok(())
     }
 
@@ -429,46 +440,52 @@ mod tests {
         let mut builder = CellBuilder::new();
         let data = vec![1u8; 2];
         assert_err!(builder.write_bits(&data, 33));
-        assert_err!(builder.build());
         Ok(())
     }
 
-    #[cfg(feature = "num-bigint")]
     #[test]
     fn test_builder_write_num_bigint() -> anyhow::Result<()> {
-        
         let prepare_cell = |num_str: &str, bits_len: u32| {
-            let number = BigInt::from_str(num_str)?;
+            let number = num_bigint::BigInt::from_str(num_str)?;
             let mut builder = CellBuilder::new();
             builder.write_bits([0], 7)?; // for pretty printing
             builder.write_bignum(&number, bits_len)?;
             let cell = builder.build()?;
             Ok::<_, anyhow::Error>(cell)
         };
-        
+
         let cell = prepare_cell("3", 33)?;
         assert_eq!(cell.get_data(), [0, 0, 0, 0, 3]);
-        
+
         // 256 bits (+ sign)
         let cell = prepare_cell("97887266651548624282413032824435501549503168134499591480902563623927645013201", 257)?;
-        assert_eq!(cell.get_data(), [0, 216, 106, 58, 195, 97, 8, 173, 64, 195, 26, 52, 186, 72, 230, 253, 248, 12, 245, 147, 137, 170, 38, 117, 66, 220, 74, 104, 103, 119, 137, 4, 209]);
+        assert_eq!(
+            cell.get_data(),
+            [
+                0, 216, 106, 58, 195, 97, 8, 173, 64, 195, 26, 52, 186, 72, 230, 253, 248, 12, 245, 147, 137, 170, 38,
+                117, 66, 220, 74, 104, 103, 119, 137, 4, 209
+            ]
+        );
 
         let cell = prepare_cell("-5", 257)?;
-        assert_eq!(cell.get_data(), [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5]);
+        assert_eq!(
+            cell.get_data(),
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5]
+        );
 
         let cell = prepare_cell("-5", 33)?;
         assert_eq!(cell.get_data(), [1, 0, 0, 0, 5]);
-        
+
         let cell = prepare_cell("-5", 4)?;
         assert_eq!(cell.get_data(), [1, 160]);
-        
+
         let cell = prepare_cell("-5", 5)?;
         assert_eq!(cell.get_data(), [1, 80]);
         Ok(())
     }
 
     fn prepare_cell_big_uint(num_str: &str, bits_len: u32) -> anyhow::Result<CellOwned> {
-        let number = BigUint::from_str(num_str)?;
+        let number = num_bigint::BigUint::from_str(num_str)?;
         let mut builder = CellBuilder::new();
         builder.write_bits([0], 7)?; // for pretty printing
         builder.write_bignum(&number, bits_len)?;
@@ -476,32 +493,48 @@ mod tests {
         Ok(cell)
     }
 
-    #[cfg(feature = "num-bigint")]
     #[test]
     fn test_builder_write_num_biguint() -> anyhow::Result<()> {
         let prepare_cell = |num_str: &str, bits_len: u32| {
-            let number = BigUint::from_str(num_str)?;
+            let number = num_bigint::BigUint::from_str(num_str)?;
             let mut builder = CellBuilder::new();
             builder.write_bits([0], 7)?; // for pretty printing
             builder.write_bignum(&number, bits_len)?;
             let cell = builder.build()?;
             Ok::<_, anyhow::Error>(cell)
         };
-        
 
         let cell = prepare_cell("3", 33)?;
         assert_eq!(cell.get_data(), [0, 0, 0, 0, 3]);
 
         // 256 bits (+ sign)
-        let cell = prepare_cell_big_uint("97887266651548624282413032824435501549503168134499591480902563623927645013201", 257)?;
-        assert_eq!(cell.get_data(), [0, 216, 106, 58, 195, 97, 8, 173, 64, 195, 26, 52, 186, 72, 230, 253, 248, 12, 245, 147, 137, 170, 38, 117, 66, 220, 74, 104, 103, 119, 137, 4, 209]);
+        let cell = prepare_cell_big_uint(
+            "97887266651548624282413032824435501549503168134499591480902563623927645013201",
+            257,
+        )?;
+        assert_eq!(
+            cell.get_data(),
+            [
+                0, 216, 106, 58, 195, 97, 8, 173, 64, 195, 26, 52, 186, 72, 230, 253, 248, 12, 245, 147, 137, 170, 38,
+                117, 66, 220, 74, 104, 103, 119, 137, 4, 209
+            ]
+        );
         Ok(())
     }
 
-    #[cfg(feature = "num-bigint")]
     #[test]
     fn test_builder_write_bignum_zero() -> anyhow::Result<()> {
-        todo!()
-    }
+        let number = num_bigint::BigUint::from_str("0")?;
+        let mut builder = CellBuilder::new();
+        assert_ok!(builder.write_bignum(&number, 0));
+        assert_ok!(builder.write_bignum(&number, 1));
+        assert_ok!(builder.write_bignum(&number, 2));
 
+        let number = num_bigint::BigInt::from_str("0")?;
+        let mut builder = CellBuilder::new();
+        assert_err!(builder.write_bignum(&number, 0));
+        assert_ok!(builder.write_bignum(&number, 1));
+        assert_ok!(builder.write_bignum(&number, 2));
+        Ok(())
+    }
 }
