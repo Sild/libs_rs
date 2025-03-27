@@ -42,8 +42,8 @@ impl CellBuilder {
         Ok(())
     }
 
-    /// expecting data.len() * 8 must be >= (bits_offset + bits_len)
-    fn write_bits_with_offset<T: AsRef<[u8]>>(
+    /// expecting data.len() * 8 >= (bits_offset + bits_len)
+    pub fn write_bits_with_offset<T: AsRef<[u8]>>(
         &mut self,
         data: T,
         mut bits_len: u32,
@@ -212,6 +212,24 @@ mod tests {
         let cell = cell_builder.build()?;
         assert_eq!(cell.get_data(), vec![0b1010_0000]);
         assert_eq!(cell.get_data_bits_len(), 4);
+        Ok(())
+    }
+
+    #[test]
+    fn test_builder_write_bits_with_offset() -> anyhow::Result<()> {
+        let mut cell_builder = CellBuilder::new();
+        cell_builder.write_bits_with_offset([0b1010_1010], 8, 0)?;
+        cell_builder.write_bits_with_offset([0b0000_1111], 4, 4)?;
+        cell_builder.write_bits_with_offset([0b1111_0011], 3, 4)?;
+        let cell = cell_builder.build()?;
+        assert_eq!(cell.get_data(), vec![0b1010_1010, 0b1111_0010]);
+        assert_eq!(cell.get_data_bits_len(), 15);
+
+        let mut cell_builder = CellBuilder::new();
+        cell_builder.write_bits_with_offset([0b1010_1010, 0b0000_1111], 3, 10)?;
+        let cell = cell_builder.build()?;
+        assert_eq!(cell.get_data(), vec![0b0010_0000]);
+        assert_eq!(cell.get_data_bits_len(), 3);
         Ok(())
     }
 
