@@ -37,7 +37,7 @@ impl CellBuilder {
     }
 
     pub fn write_bit(&mut self, data: bool) -> Result<(), TonLibError> {
-        self.check_capacity(1)?;
+        self.ensure_capacity(1)?;
         self.data_writer.write_bit(data)?;
         Ok(())
     }
@@ -49,7 +49,7 @@ impl CellBuilder {
         mut bits_len: u32,
         mut bits_offset: u32,
     ) -> Result<(), TonLibError> {
-        self.check_capacity(bits_len)?;
+        self.ensure_capacity(bits_len)?;
         let mut data_ref = data.as_ref();
 
         if (bits_len + bits_offset + 7) / 8 > data_ref.len() as u32 {
@@ -116,14 +116,14 @@ impl CellBuilder {
     }
 
     pub fn write_num<N: TonNumber>(&mut self, data: N, bits_len: u32) -> Result<(), TonLibError> {
-        self.check_capacity(bits_len)?;
+        self.ensure_capacity(bits_len)?;
         let unsigned_data = data.to_unsigned();
         self.data_writer.write(bits_len, unsigned_data)?;
         Ok(())
     }
 
     pub fn write_bignum<N: TonBigNumber>(&mut self, data: &N, bits_len: u32) -> Result<(), TonLibError> {
-        self.check_capacity(bits_len)?;
+        self.ensure_capacity(bits_len)?;
 
         // handling it like ton-core
         // https://github.com/ton-core/ton-core/blob/main/src/boc/BitBuilder.ts#L122
@@ -164,7 +164,7 @@ impl CellBuilder {
         self.write_bits_with_offset(data_bytes, mag_bits_to_write - padding_bits_len, bits_offset)
     }
 
-    fn check_capacity(&mut self, bits_len: u32) -> Result<(), TonLibError> {
+    fn ensure_capacity(&mut self, bits_len: u32) -> Result<(), TonLibError> {
         let new_bits_len = self.data_bits_len as u32 + bits_len;
         if new_bits_len <= CellMeta::CELL_MAX_DATA_BITS_LEN {
             self.data_bits_len = new_bits_len as usize;

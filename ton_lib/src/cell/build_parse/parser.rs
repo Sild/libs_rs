@@ -1,7 +1,7 @@
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::cell_owned::CellOwned;
 use crate::cell::ton_cell::{TonCell, TonCellRef};
-use crate::cell::ton_number::traits::TonNumber;
+use crate::cell::ton_number::traits::{TonBigNumber, TonNumber};
 use crate::errors::TonLibError;
 use bitstream_io::{BigEndian, BitRead, BitReader};
 use std::io::{Cursor, SeekFrom};
@@ -65,9 +65,23 @@ impl<'a> CellParser<'a> {
         Ok(())
     }
 
-    pub fn read_num<N: TonNumber>(&mut self, bit_len: u32) -> Result<N, TonLibError> {
-        self.ensure_enough_bits(bit_len)?;
-        Ok(self.data_reader.read::<N>(bit_len)?)
+    pub fn read_num<N: TonNumber>(&mut self, bits_len: u32) -> Result<N, TonLibError> {
+        self.ensure_enough_bits(bits_len)?;
+        Ok(self.data_reader.read::<N>(bits_len)?)
+    }
+
+    pub fn read_big_num<N: TonBigNumber>(&mut self, bits_len: u32) -> Result<N, TonLibError> {
+        self.ensure_enough_bits(bits_len)?;
+        if N::SIGNED {
+            let negative = self.read_bit()?;
+            let mut dst = vec![0u8; (bits_len as usize + 6) / 8];
+            self.read_bits(bits_len, &mut dst)?;
+        } else {
+            let mut dst = vec![0u8; (bits_len as usize + 7) / 8];
+            self.read_bits(bits_len, &mut dst)?;
+        }
+        todo!();
+        // Ok(self.data_reader.read::<N>(bits_len)?)
     }
 
     pub fn read_cell(&mut self) -> Result<CellOwned, TonLibError> {
@@ -93,6 +107,24 @@ impl<'a> CellParser<'a> {
         Ok(cell_ref)
     }
 
+    pub fn data_bits_left(&mut self) -> Result<u32, TonLibError> {
+        let reader_pos = self.data_reader.position_in_bits()? as u32;
+        Ok(self.cell.get_data_bits_len() as u32 - reader_pos)
+    }
+
+    pub fn seek_bits(&mut self, offset: i32) -> Result<(), TonLibError> {
+        let new_pos = self.data_reader.position_in_bits()? as i32 + offset;
+        let data_bits_len = self.cell.get_data_bits_len() as i32;
+        if new_pos < 0 || new_pos > (data_bits_len - 1) {
+            return Err(TonLibError::ParserBadPosition {
+                new_pos,
+                bits_len: data_bits_len as u32,
+            });
+        }
+        self.data_reader.seek_bits(SeekFrom::Current(offset as i64))?;
+        Ok(())
+    }
+
     pub fn ensure_empty(&mut self) -> Result<(), TonLibError> {
         let bits_left = self.data_bits_left()?;
         if bits_left == 0 {
@@ -100,11 +132,6 @@ impl<'a> CellParser<'a> {
         }
 
         Err(TonLibError::ParserCellNotEmpty { bits_left })
-    }
-
-    pub fn data_bits_left(&mut self) -> Result<u32, TonLibError> {
-        let reader_pos = self.data_reader.position_in_bits()? as u32;
-        Ok(self.cell.get_data_bits_len() as u32 - reader_pos)
     }
 
     // returns remaining bits
@@ -118,19 +145,6 @@ impl<'a> CellParser<'a> {
             req: bit_len,
             left: bits_left,
         })
-    }
-
-    fn seek_bits(&mut self, offset: i32) -> Result<(), TonLibError> {
-        let new_pos = self.data_reader.position_in_bits()? as i32 + offset;
-        let data_bits_len = self.cell.get_data_bits_len() as i32;
-        if new_pos < 0 || new_pos > (data_bits_len - 1) {
-            return Err(TonLibError::ParserBadPosition {
-                new_pos,
-                bits_len: data_bits_len as u32,
-            });
-        }
-        self.data_reader.seek_bits(SeekFrom::Current(offset as i64))?;
-        Ok(())
     }
 }
 
