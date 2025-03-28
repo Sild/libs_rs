@@ -71,17 +71,32 @@ impl<'a> CellParser<'a> {
     }
 
     pub fn read_big_num<N: TonBigNumber>(&mut self, bits_len: u32) -> Result<N, TonLibError> {
+        if bits_len == 0 {
+            return Ok(N::zero())
+        }
         self.ensure_enough_bits(bits_len)?;
+
         if N::SIGNED {
-            let negative = self.read_bit()?;
-            let mut dst = vec![0u8; (bits_len as usize + 6) / 8];
+            let mut dst = vec![0u8; (bits_len as usize + 7) / 8];
             self.read_bits(bits_len, &mut dst)?;
+            let negative = dst.first().unwrap() & (1 << 7) != 0;
+            *dst.first_mut().unwrap() &= !(1 << 7); // set first bit to zero
+            
+            let negative = self.read_bit()?;
+            let bits_left = bits_len - 1;
+            if bits_left == 0 {
+                return Ok(N::zero());
+            }
+
+            self.read_bits(bits_left, &mut dst)?;
+            *dst.last_mut().unwrap() >>=  8 - bits_left % 8;
+            Ok(N::from_unsigned_bytes_be(negative, &dst))
         } else {
             let mut dst = vec![0u8; (bits_len as usize + 7) / 8];
             self.read_bits(bits_len, &mut dst)?;
+            *dst.last_mut().unwrap() >>=  8 - (bits_len % 8);
+            Ok(N::from_unsigned_bytes_be(false, &dst))
         }
-        todo!();
-        // Ok(self.data_reader.read::<N>(bits_len)?)
     }
 
     pub fn read_cell(&mut self) -> Result<CellOwned, TonLibError> {
@@ -148,9 +163,12 @@ impl<'a> CellParser<'a> {
     }
 }
 
+#[cfg(feature = "fastnum")]
+#[cfg(feature = "num-bigint")]
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use num_bigint::BigInt;
+use super::*;
     // use crate::cell::cell_slice::CellSlice;
     use crate::cell::build_parse::builder::CellBuilder;
     use crate::cell::cell_owned::CellOwned;
@@ -318,6 +336,22 @@ mod tests {
         let cell = CellOwned::new(meta, data.to_vec(), 19, TonCellRefsStore::from([CellOwned::EMPTY.into_ref()]));
 
         assert_eq!(CellParser::new(&cell).read_cell()?, cell);
+        Ok(())
+    }
+    
+    #[test]
+    fn test_parser_read_bigint() -> anyhow::Result<()> {
+        let cell_slice =
+            CellOwned::new(CellMeta::EMPTY_CELL_META, vec![0b10101010, 0b01010101, 0b11111111, 0b11111111], 32, TonCellRefsStore::new());
+        let mut parser = CellParser::new(&cell_slice);
+        assert_eq!(parser.read_big_num::<BigInt>(3)?, (-1).into());
+        assert_eq!(parser.data_reader.position_in_bits()?, 3);
+        assert_eq!(parser.read_big_num::<BigInt>(5)?, 10.into()); // finish with first byte
+        assert_eq!(parser.data_reader.position_in_bits()?, 8);
+        parser.read_bit()?; // skip 1 bit
+        assert_eq!(parser.read_big_num::<BigInt>(7)?, (-21).into()); // finish with second byte
+        assert_eq!(parser.data_reader.position_in_bits()?, 16);
+        assert_eq!(parser.read_big_num::<BigInt>(16)?, (-32767).into());
         Ok(())
     }
 

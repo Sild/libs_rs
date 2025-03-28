@@ -11,6 +11,7 @@ pub trait TonBigNumber: Display + Sized {
     const SIGNED: bool;
     fn is_negative(&self) -> bool;
     fn is_zero(&self) -> bool;
+    fn zero() -> Self;
     /// must includes sign bit if SIGNED=true
     fn min_bits_len(&self) -> u32;
     fn to_unsigned_bytes_be(&self) -> Vec<u8>;

@@ -6,6 +6,7 @@ impl TonBigNumber for BigInt {
     const SIGNED: bool = true;
     fn is_negative(&self) -> bool { num_traits::Signed::is_negative(self) }
     fn is_zero(&self) -> bool { Zero::is_zero(self) }
+    fn zero() -> Self { Zero::zero() }
     fn min_bits_len(&self) -> u32 { self.bits() as u32 + 1 } // extra bit for sign
     fn to_unsigned_bytes_be(&self) -> Vec<u8> { BigInt::to_bytes_be(self).1 }
 
@@ -19,6 +20,7 @@ impl TonBigNumber for BigUint {
     const SIGNED: bool = false;
     fn is_negative(&self) -> bool { false }
     fn is_zero(&self) -> bool { Zero::is_zero(self) }
+    fn zero() -> Self { Zero::zero() }
     fn min_bits_len(&self) -> u32 { self.bits() as u32 }
     fn to_unsigned_bytes_be(&self) -> Vec<u8> { BigUint::to_bytes_be(self) }
 
