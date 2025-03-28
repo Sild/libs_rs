@@ -14,6 +14,7 @@ impl TonBigNumber for BigInt {
         let sign = if negative { Sign::Minus } else { Sign::Plus };
         BigInt::from_bytes_be(sign, bytes)
     }
+    fn shr(&self, bits: u32) -> Self { self >> bits }
 }
 
 impl TonBigNumber for BigUint {
@@ -25,4 +26,5 @@ impl TonBigNumber for BigUint {
     fn to_unsigned_bytes_be(&self) -> Vec<u8> { BigUint::to_bytes_be(self) }
 
     fn from_unsigned_bytes_be(_negative: bool, bytes: &[u8]) -> BigUint { BigUint::from_bytes_be(bytes) }
+    fn shr(&self, bits: u32) -> Self { self >> bits }
 }

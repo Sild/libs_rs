@@ -122,13 +122,13 @@ impl CellBuilder {
         Ok(())
     }
 
-    pub fn write_bignum<N: TonBigNumber>(&mut self, data: &N, bits_len: u32) -> Result<(), TonLibError> {
+    pub fn write_big_num<N: TonBigNumber>(&mut self, data: &N, bits_len: u32) -> Result<(), TonLibError> {
         self.ensure_capacity(bits_len)?;
 
         // handling it like ton-core
         // https://github.com/ton-core/ton-core/blob/main/src/boc/BitBuilder.ts#L122
         if bits_len == 0 {
-            if !N::SIGNED && data.is_zero() {
+            if data.is_zero() {
                 return Ok(());
             }
             return Err(TonLibError::BuilderNumberBitsMismatch {
@@ -467,7 +467,7 @@ mod tests {
             let number = num_bigint::BigInt::from_str(num_str)?;
             let mut builder = CellBuilder::new();
             builder.write_bits([0], 7)?; // for pretty printing
-            builder.write_bignum(&number, bits_len)?;
+            builder.write_big_num(&number, bits_len)?;
             let cell = builder.build()?;
             Ok::<_, anyhow::Error>(cell)
         };
@@ -506,7 +506,7 @@ mod tests {
         let number = num_bigint::BigUint::from_str(num_str)?;
         let mut builder = CellBuilder::new();
         builder.write_bits([0], 7)?; // for pretty printing
-        builder.write_bignum(&number, bits_len)?;
+        builder.write_big_num(&number, bits_len)?;
         let cell = builder.build()?;
         Ok(cell)
     }
@@ -517,7 +517,7 @@ mod tests {
             let number = num_bigint::BigUint::from_str(num_str)?;
             let mut builder = CellBuilder::new();
             builder.write_bits([0], 7)?; // for pretty printing
-            builder.write_bignum(&number, bits_len)?;
+            builder.write_big_num(&number, bits_len)?;
             let cell = builder.build()?;
             Ok::<_, anyhow::Error>(cell)
         };
@@ -542,17 +542,18 @@ mod tests {
 
     #[test]
     fn test_builder_write_bignum_zero() -> anyhow::Result<()> {
-        let number = num_bigint::BigUint::from_str("0")?;
-        let mut builder = CellBuilder::new();
-        assert_ok!(builder.write_bignum(&number, 0));
-        assert_ok!(builder.write_bignum(&number, 1));
-        assert_ok!(builder.write_bignum(&number, 2));
-
         let number = num_bigint::BigInt::from_str("0")?;
         let mut builder = CellBuilder::new();
-        assert_err!(builder.write_bignum(&number, 0));
-        assert_ok!(builder.write_bignum(&number, 1));
-        assert_ok!(builder.write_bignum(&number, 2));
+        assert_ok!(builder.write_big_num(&number, 0));
+        assert_ok!(builder.write_big_num(&number, 1));
+        assert_ok!(builder.write_big_num(&number, 2));
+
+        let number = num_bigint::BigUint::from_str("0")?;
+        let mut builder = CellBuilder::new();
+        assert_ok!(builder.write_big_num(&number, 0));
+        assert_ok!(builder.write_big_num(&number, 1));
+        assert_ok!(builder.write_big_num(&number, 2));
+
         Ok(())
     }
 }

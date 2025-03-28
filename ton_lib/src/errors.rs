@@ -16,8 +16,6 @@ pub enum TonLibError {
     ParserRefsUnderflow { req: usize },
     #[error("ParserError: Cell is not empty: {bits_left} bits left")]
     ParserCellNotEmpty { bits_left: u32 },
-    #[error("ParserError: Container is too small: {req} bits requested, but only {total} available")]
-    ParserSmallContainer { req: u32, total: u32 },
 
     // cell_builder
     #[error("BuilderError: Can't write {req} bits: only {left} free bits available")]

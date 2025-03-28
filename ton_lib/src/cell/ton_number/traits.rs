@@ -16,4 +16,5 @@ pub trait TonBigNumber: Display + Sized {
     fn min_bits_len(&self) -> u32;
     fn to_unsigned_bytes_be(&self) -> Vec<u8>;
     fn from_unsigned_bytes_be(negative: bool, bytes: &[u8]) -> Self;
+    fn shr(&self, bits: u32) -> Self;
 }
