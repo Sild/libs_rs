@@ -18,6 +18,9 @@ fastnum = []
 
 
 [dependencies]
+# Internal
+ton_lib_proc_macro = { path = "proc_macro" }
+
 bitstream-io = "2.6"
 thiserror = "2.0"
 hex = "0.4"
