@@ -15,7 +15,6 @@ pub trait TLBType: Sized {
     // doesn't include prefix handling
     fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError>;
     fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError>;
-    
 
     // interface
     fn read(parser: &mut CellParser) -> Result<Self, TonLibError> {
@@ -68,7 +67,7 @@ pub trait TLBType: Sized {
             return Ok(());
         }
         let actual_val = reader.read_num(Self::PREFIX.bits_len)?;
-        
+
         if actual_val != Self::PREFIX.value {
             return Err(TonLibError::TLBWrongOpcode {
                 exp: Self::PREFIX.value,
@@ -93,5 +92,6 @@ pub struct TLBPrefix {
 }
 
 impl TLBPrefix {
-    pub const NULL: TLBPrefix = TLBPrefix { bits_len: 0, value: 0 };
+    pub const NULL: TLBPrefix = TLBPrefix::new(0, 0);
+    pub const fn new(value: u128, bits_len: u32) -> Self { TLBPrefix { value, bits_len } }
 }
