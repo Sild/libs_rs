@@ -9,7 +9,7 @@ struct TLBDeriveAttrs {
     bits_len: Option<u32>,
 }
 
-/// Implements `TLBType` for the type:
+/// Automatic `TLBType` implementation
 // #[derive(ton_lib_proc_macro::TLBDerive)]
 // #[tlb_derive(prefix="0x12345678", bits_len=32)]
 // struct MyStruct {}
@@ -42,7 +42,14 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
         .iter()
         .map(|f| {
             let ident = &f.ident;
-            quote!(#ident: TLBType::read(parser)?,)
+            quote!(let #ident = TLBType::read(parser)?;)
+        })
+        .collect::<Vec<_>>();
+    let init_obj_str = fields
+        .iter()
+        .map(|f| {
+            let ident = &f.ident;
+            quote!(#ident,)
         })
         .collect::<Vec<_>>();
 
@@ -59,8 +66,9 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
             const PREFIX: TLBPrefix = TLBPrefix::new(#value, #bits_len);
 
             fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
+                #(#read_def_str)*
                 Ok(Self {
-                    #(#read_def_str)*
+                    #(#init_obj_str)*
                 })
             }
 
