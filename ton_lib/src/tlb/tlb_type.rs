@@ -79,7 +79,7 @@ pub trait TLBType: Sized {
 
     fn write_prefix(builder: &mut CellBuilder) -> Result<(), TonLibError> {
         if Self::PREFIX != TLBPrefix::NULL {
-            builder.write_num(Self::PREFIX.value, Self::PREFIX.bits_len)?;
+            builder.write_num(&Self::PREFIX.value, Self::PREFIX.bits_len)?;
         }
         Ok(())
     }

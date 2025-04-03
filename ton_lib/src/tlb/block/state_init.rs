@@ -2,7 +2,7 @@ use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
 use crate::cell::ton_cell::TonCellRef;
 use crate::errors::TonLibError;
-use crate::tlb::primitives::numbers::TLBNumber;
+use crate::tlb::primitives::num::TLBNumber;
 use crate::tlb::tlb_type::TLBPrefix;
 use crate::tlb::tlb_type::TLBType;
 use ton_lib_proc_macro::TLBDerive;

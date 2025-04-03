@@ -26,7 +26,7 @@ impl<T, const BITS_SIZE: u32> DerefMut for TLBNumber<T, BITS_SIZE> {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
 }
 
-macro_rules! tlb_number_primitive_impl {
+macro_rules! tlb_num_impl {
     ($t:ty) => {
         impl<const BITS_LEN: u32> TLBType for TLBNumber<$t, BITS_LEN> {
             fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
@@ -34,39 +34,24 @@ macro_rules! tlb_number_primitive_impl {
             }
 
             fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
-                builder.write_num(self.0, BITS_LEN)
+                builder.write_num(&self.0, BITS_LEN)
             }
         }
     };
 }
 
-tlb_number_primitive_impl!(i8);
-tlb_number_primitive_impl!(u8);
-tlb_number_primitive_impl!(i16);
-tlb_number_primitive_impl!(u16);
-tlb_number_primitive_impl!(i32);
-tlb_number_primitive_impl!(u32);
-tlb_number_primitive_impl!(i64);
-tlb_number_primitive_impl!(u64);
-tlb_number_primitive_impl!(i128);
-tlb_number_primitive_impl!(u128);
-
-#[cfg(any(feature = "num-bigint", feature = "fastnum"))]
-macro_rules! tlb_big_number_impl {
-    ($t:ty) => {
-        impl<const BITS_LEN: u32> TLBType for TLBNumber<$t, BITS_LEN> {
-            fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
-                Ok(TLBNumber(parser.read_big_num(BITS_LEN)?))
-            }
-
-            fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
-                builder.write_big_num(&self.0, BITS_LEN)
-            }
-        }
-    };
-}
+tlb_num_impl!(i8);
+tlb_num_impl!(u8);
+tlb_num_impl!(i16);
+tlb_num_impl!(u16);
+tlb_num_impl!(i32);
+tlb_num_impl!(u32);
+tlb_num_impl!(i64);
+tlb_num_impl!(u64);
+tlb_num_impl!(i128);
+tlb_num_impl!(u128);
 
 #[cfg(feature = "num-bigint")]
-tlb_big_number_impl!(BigInt);
+tlb_num_impl!(BigInt);
 #[cfg(feature = "num-bigint")]
-tlb_big_number_impl!(BigUint);
+tlb_num_impl!(BigUint);

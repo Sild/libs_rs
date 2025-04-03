@@ -1,6 +1,6 @@
 pub mod bool;
 pub mod hash_map;
-pub mod numbers;
+pub mod num;
 pub mod option;
 pub mod tlb_object;
 
