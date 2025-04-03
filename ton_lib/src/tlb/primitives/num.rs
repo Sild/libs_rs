@@ -2,56 +2,24 @@ use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 use crate::tlb::tlb_type::TLBType;
-#[cfg(feature = "num-bigint")]
-use num_bigint::{BigInt, BigUint};
-use std::ops::{Deref, DerefMut};
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct TLBNumber<T, const BITS_LEN: u32>(T);
-
-impl<T, const BITS_LEN: u32> TLBNumber<T, BITS_LEN> {
-    pub fn new(value: T) -> Self { TLBNumber(value) }
-}
-
-impl<T, const BITS_LEN: u32> From<T> for TLBNumber<T, BITS_LEN> {
-    fn from(value: T) -> Self { TLBNumber(value) }
-}
-
-impl<T, const BITS_SIZE: u32> Deref for TLBNumber<T, BITS_SIZE> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target { &self.0 }
-}
-
-impl<T, const BITS_SIZE: u32> DerefMut for TLBNumber<T, BITS_SIZE> {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
-}
 
 macro_rules! tlb_num_impl {
-    ($t:ty) => {
-        impl<const BITS_LEN: u32> TLBType for TLBNumber<$t, BITS_LEN> {
-            fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
-                Ok(TLBNumber(parser.read_num(BITS_LEN)?))
-            }
+    ($t:ty, $bits:tt) => {
+        impl TLBType for $t {
+            fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> { parser.read_num($bits) }
 
-            fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
-                builder.write_num(&self.0, BITS_LEN)
-            }
+            fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> { builder.write_num(self, $bits) }
         }
     };
 }
 
-tlb_num_impl!(i8);
-tlb_num_impl!(u8);
-tlb_num_impl!(i16);
-tlb_num_impl!(u16);
-tlb_num_impl!(i32);
-tlb_num_impl!(u32);
-tlb_num_impl!(i64);
-tlb_num_impl!(u64);
-tlb_num_impl!(i128);
-tlb_num_impl!(u128);
-
-#[cfg(feature = "num-bigint")]
-tlb_num_impl!(BigInt);
-#[cfg(feature = "num-bigint")]
-tlb_num_impl!(BigUint);
+tlb_num_impl!(i8, 8);
+tlb_num_impl!(i16, 16);
+tlb_num_impl!(i32, 32);
+tlb_num_impl!(i64, 64);
+tlb_num_impl!(i128, 128);
+tlb_num_impl!(u8, 8);
+tlb_num_impl!(u16, 16);
+tlb_num_impl!(u32, 32);
+tlb_num_impl!(u64, 64);
+tlb_num_impl!(u128, 128);
