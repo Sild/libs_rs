@@ -30,14 +30,3 @@ ton_cell_num_primitive_impl!(i64, true, u64);
 ton_cell_num_primitive_impl!(u64, false, u64);
 ton_cell_num_primitive_impl!(i128, true, u128);
 ton_cell_num_primitive_impl!(u128, false, u128);
-
-// ton_number_primitive_impl!(i8, u8);
-// ton_number_primitive_impl!(u8, u8);
-// ton_number_primitive_impl!(i16, u16);
-// ton_number_primitive_impl!(u16, u16);
-// ton_number_primitive_impl!(i32, u32);
-// ton_number_primitive_impl!(u32, u32);
-// ton_number_primitive_impl!(i64, u64);
-// ton_number_primitive_impl!(u64, u64);
-// ton_number_primitive_impl!(i128, u128);
-// ton_number_primitive_impl!(u128, u128);
