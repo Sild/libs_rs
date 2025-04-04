@@ -1,4 +1,9 @@
+mod tlb_cell;
+mod tlb_object;
+mod tlb_type;
+
 pub mod block;
-pub mod cell_ext;
 pub mod primitives;
-pub mod tlb_type;
+
+pub use tlb_object::*;
+pub use tlb_type::*;

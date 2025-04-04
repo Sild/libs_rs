@@ -49,6 +49,9 @@ pub enum TonLibError {
     },
     #[error("TLBEnum: Out of options")]
     TLBEnumOutOfOptions,
+    #[error("TLBObject: No internal value found (method: {0})")]
+    TLBObjectNoValue(String),
+
     #[error("TonAddressParseError: address={0}, err: {1}")]
     TonAddressParseError(String, String),
 
