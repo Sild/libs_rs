@@ -12,18 +12,18 @@ pub struct ConstLen<T, const BITS_LEN: u32> {
 
 /// VerLen: BITS_LEN_LEN specifies the number of bits used to store the length of the data
 #[derive(Debug, Clone, PartialEq)]
-pub struct VarLen<T, const BITS_LEN_LEN: u32> {
-    pub bits_len: u32,
+pub struct VarLen<T, const BITS_LEN_LEN: u32, const LEN_IN_BYTES: bool = false> {
+    pub len: u32,
     pub data: T,
 }
 
 /// new
 impl<T, const L: u32> ConstLen<T, L> {
-    pub fn new(data: T) -> Self { Self { data } }
+    pub fn new<D: Into<T>>(data: D) -> Self { Self { data: data.into() } }
 }
 
-impl<T, const L: u32> VarLen<T, L> {
-    pub fn new(bits_len: u32, data: T) -> Self { Self { bits_len, data } }
+impl<T, const L: u32, const BL: bool> VarLen<T, L, BL> {
+    pub fn new<D: Into<T>>(len: u32, data: D) -> Self { Self { len, data: data.into() } }
 }
 
 // From
@@ -31,10 +31,10 @@ impl<T, const L: u32> From<T> for ConstLen<T, L> {
     fn from(value: T) -> Self { Self { data: value } }
 }
 
-impl<T, const L: u32> From<(u32, T)> for VarLen<T, L> {
+impl<T, const L: u32, const LB: bool> From<(u32, T)> for VarLen<T, L, LB> {
     fn from(value: (u32, T)) -> Self {
         Self {
-            bits_len: value.0,
+            len: value.0,
             data: value.1,
         }
     }
@@ -50,12 +50,12 @@ impl<T, const L: u32> DerefMut for ConstLen<T, L> {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.data }
 }
 
-impl<T, const L: u32> Deref for VarLen<T, L> {
+impl<T, const L: u32, const BL: bool> Deref for VarLen<T, L, BL> {
     type Target = T;
     fn deref(&self) -> &Self::Target { &self.data }
 }
 
-impl<T, const L: u32> DerefMut for VarLen<T, L> {
+impl<T, const L: u32, const BL: bool> DerefMut for VarLen<T, L, BL> {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.data }
 }
 
@@ -72,16 +72,21 @@ impl<const BITS_LEN: u32> TLBType for ConstLen<Vec<u8>, BITS_LEN> {
     }
 }
 
-impl<const BITS_LEN_LEN: u32> TLBType for VarLen<Vec<u8>, BITS_LEN_LEN> {
+impl<const BITS_LEN_LEN: u32, const BL: bool> TLBType for VarLen<Vec<u8>, BITS_LEN_LEN, BL> {
     fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
-        let bits_len: u32 = parser.read_num(BITS_LEN_LEN)?;
-        let data: Vec<u8> = parser.read_bits(bits_len)?;
-        Ok(Self { bits_len, data })
+        let len = parser.read_num(BITS_LEN_LEN)?;
+        let data = if BL {
+            parser.read_bytes(len)?
+        } else {
+            parser.read_bits(len)?
+        };
+        Ok(Self { len, data })
     }
 
     fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
-        builder.write_num(&self.bits_len, BITS_LEN_LEN)?;
-        builder.write_bits(&self.data, self.bits_len)?;
+        builder.write_num(&self.len, BITS_LEN_LEN)?;
+        let bits_len = if BL { self.len * 8 } else { self.len };
+        builder.write_bits(&self.data, bits_len)?;
         Ok(())
     }
 }
@@ -101,16 +106,24 @@ macro_rules! dyn_len_num_impl {
             }
         }
 
-        impl<const L: u32> TLBType for VarLen<$t, L> {
+        impl<const L: u32, const BL: bool> TLBType for VarLen<$t, L, BL> {
             fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
-                let bits_len: u32 = parser.read_num(L)?;
-                let data: $t = parser.read_num(bits_len)?;
-                Ok(Self { bits_len, data })
+                let len = parser.read_num(L)?;
+                let data = if BL {
+                    parser.read_num(len * 8)?
+                } else {
+                    parser.read_num(len)?
+                };
+                Ok(Self { len, data })
             }
 
             fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
-                builder.write_num(&self.bits_len, L)?;
-                builder.write_num(&self.data, L)?;
+                builder.write_num(&self.len, L)?;
+                if BL {
+                    builder.write_num(&self.data, self.len * 8)?;
+                } else {
+                    builder.write_num(&self.data, self.len)?;
+                }
                 Ok(())
             }
         }

@@ -29,7 +29,7 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
     // let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
     // Extract fields if it's a struct
-     let tokens = match &input.data {
+    let tokens = match &input.data {
         Data::Struct(data) => {
             let fields = match &data.fields {
                 Fields::Named(fields) => &fields.named,     // For struct { field1: T, field2: T }
@@ -62,25 +62,23 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
             let tokens = quote::quote! {
                 impl TLBType for #ident {
                     const PREFIX: TLBPrefix = TLBPrefix::new(#value, #bits_len);
-    
+
                     fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
                         #(#read_def_str)*
                         Ok(Self {
                             #(#init_obj_str)*
                         })
                     }
-        
+
                     fn write_def(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
                         #(#write_def_str)*
                         Ok(())
                     }
                 }
             };
-            return tokens.into()
-            
-        },
+            return tokens.into();
+        }
         Data::Enum(data) => {
-
             let variant_readers = data.variants.iter().map(|variant| {
                 let variant_name = &variant.ident;
                 // Expect single unnamed field (like `Std(...)`)
@@ -119,12 +117,12 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
             quote! {
                 impl TLBType for #ident {
                     const PREFIX: TLBPrefix = TLBPrefix::new(#value, #bits_len);
-        
+
                     fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
                         #(#variant_readers)*
                         Err(TonLibError::TLBEnumOutOfOptions)
                     }
-        
+
                     fn write_def(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
                         match self {
                             #(#variant_writers)*
@@ -133,7 +131,7 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
                     }
                 }
             }
-        },
+        }
         _ => panic!("MyDerive only supports structs"),
     };
     tokens.into()
