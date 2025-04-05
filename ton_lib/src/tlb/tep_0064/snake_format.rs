@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SnakeFormat(pub Vec<u8>);
 

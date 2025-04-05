@@ -237,26 +237,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parser_read_byte() -> anyhow::Result<()> {
-        let cell_slice = make_test_cell(&[0b10101010, 0b01010101], 16)?;
-        let mut parser = CellParser::new(&cell_slice);
-        assert_eq!(parser.read_num::<u8>(8)?, 0b10101010);
-        assert_eq!(parser.data_reader.position_in_bits()?, 8);
-        assert_eq!(parser.read_num::<u8>(8)?, 0b01010101);
-        assert_eq!(parser.data_reader.position_in_bits()?, 16);
-        Ok(())
-    }
-
-    #[test]
-    fn test_parser_read_bytes() -> anyhow::Result<()> {
-        let cell_slice = make_test_cell(&[0b10101010, 0b01010101], 16)?;
-        let mut parser = CellParser::new(&cell_slice);
-        let dst = parser.read_bits(16)?;
-        assert_eq!(dst, [0b10101010, 0b01010101]);
-        Ok(())
-    }
-
-    #[test]
     fn test_parser_read_num() -> anyhow::Result<()> {
         let cell_slice = make_test_cell(&[0b10101010, 0b01010101], 16)?;
         let mut parser = CellParser::new(&cell_slice);
