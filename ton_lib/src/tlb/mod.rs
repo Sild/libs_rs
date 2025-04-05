@@ -5,6 +5,7 @@ mod tlb_type;
 pub mod block;
 pub mod primitives;
 pub mod tep_0064;
+pub mod wallets;
 
 pub use tlb_object::*;
 pub use tlb_type::*;

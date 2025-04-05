@@ -53,6 +53,8 @@ pub enum TonLibError {
     TLBObjectNoValue(String),
     #[error("TLBSnakeFormat: Unsupported bits_len ({0})")]
     TLBSnakeFormatUnsupportedBitsLen(u32),
+    #[error("TLBInvalidData: {0}")]
+    TLBInvalidData(String),
 
     #[error("TonAddressParseError: address={0}, err: {1}")]
     TonAddressParseError(String, String),
