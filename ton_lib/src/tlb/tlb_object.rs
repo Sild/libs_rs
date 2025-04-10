@@ -45,7 +45,7 @@ impl<T: TLBType> TLBObject<T> {
 }
 
 impl<T: TLBType> TLBType for TLBObject<T> {
-    fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
+    fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
         let cell = parser.read_cell()?;
         Ok(Self {
             plain: None,
@@ -53,7 +53,7 @@ impl<T: TLBType> TLBType for TLBObject<T> {
         })
     }
 
-    fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
+    fn write_definition(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
         if let Some(cell) = &self.cell {
             return cell.write(builder);
         }

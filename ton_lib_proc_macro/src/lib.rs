@@ -105,14 +105,14 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
                 impl TLBType for #ident {
                     const PREFIX: TLBPrefix = TLBPrefix::new(#prefix_val, #prefix_bits_len);
 
-                    fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
+                    fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
                         #(#read_def_str)*
                         Ok(Self {
                             #(#init_obj_str)*
                         })
                     }
 
-                    fn write_def(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
+                    fn write_definition(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
                         #(#write_def_str)*
                         Ok(())
                     }
@@ -160,12 +160,12 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
                 impl TLBType for #ident {
                     const PREFIX: TLBPrefix = TLBPrefix::new(#prefix_val, #prefix_bits_len);
 
-                    fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
+                    fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
                         #(#variant_readers)*
                         Err(TonLibError::TLBEnumOutOfOptions)
                     }
 
-                    fn write_def(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
+                    fn write_definition(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
                         match self {
                             #(#variant_writers)*
                         }

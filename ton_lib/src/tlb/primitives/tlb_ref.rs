@@ -21,11 +21,11 @@ impl<T> DerefMut for TLBRef<T> {
 }
 
 impl<T: TLBType> TLBType for TLBRef<T> {
-    fn read_def(parser: &mut CellParser) -> Result<TLBRef<T>, TonLibError> {
+    fn read_definition(parser: &mut CellParser) -> Result<TLBRef<T>, TonLibError> {
         Ok(TLBRef(T::from_cell(parser.read_next_ref()?)?))
     }
 
-    fn write_def(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
+    fn write_definition(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
         dst.write_ref(self.0.to_cell()?.into_ref())?;
         Ok(())
     }

@@ -123,7 +123,7 @@ impl CellBuilder {
         // handling it like ton-core
         // https://github.com/ton-core/ton-core/blob/main/src/boc/BitBuilder.ts#L122
         if bits_len == 0 {
-            if data_ref.is_zero() {
+            if data_ref.tcn_is_zero() {
                 return Ok(());
             }
             return Err(TonLibError::BuilderNumberBitsMismatch {
@@ -132,12 +132,12 @@ impl CellBuilder {
             });
         }
 
-        if let Some(unsigned) = data_ref.to_unsigned_primitive() {
+        if let Some(unsigned) = data_ref.tcn_to_unsigned_primitive() {
             self.data_writer.write(bits_len, unsigned)?;
             return Ok(());
         }
 
-        let min_bits_len = data_ref.min_bits_len();
+        let min_bits_len = data_ref.tcn_min_bits_len();
         if min_bits_len > bits_len {
             return Err(TonLibError::BuilderNumberBitsMismatch {
                 number: format!("{data_ref}"),
@@ -145,7 +145,7 @@ impl CellBuilder {
             });
         }
 
-        let data_bytes = data_ref.to_bytes();
+        let data_bytes = data_ref.tcn_to_bytes();
         let padding_val: u8 = match (N::SIGNED, data_bytes[0] >> 7 != 0) {
             (true, true) => 255,
             _ => 0,
