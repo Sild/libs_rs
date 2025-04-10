@@ -34,11 +34,7 @@ mod tests {
 
     #[test]
     fn test_all_bits_same() {
-        for val in [
-            BigUint::from(0u32),
-            BigUint::from(0b1111u32),
-            BigUint::from(0b1000u32),
-        ] {
+        for val in [BigUint::from(0u32), BigUint::from(0b1111u32), BigUint::from(0b1000u32)] {
             assert!(all_bits_same(&val));
         }
 

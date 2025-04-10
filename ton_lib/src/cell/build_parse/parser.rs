@@ -52,17 +52,17 @@ impl<'a> CellParser<'a> {
 
     pub fn read_num<N: TonCellNum>(&mut self, bits_len: u32) -> Result<N, TonLibError> {
         if bits_len == 0 {
-            return Ok(N::from_primitive(N::Primitive::zero()));
+            return Ok(N::tcn_from_primitive(N::Primitive::zero()));
         }
         self.ensure_enough_bits(bits_len)?;
         if N::IS_PRIMITIVE {
             let primitive = self.data_reader.read::<N::Primitive>(bits_len)?;
-            return Ok(N::from_primitive(primitive));
+            return Ok(N::tcn_from_primitive(primitive));
         }
         let bytes = self.read_bits(bits_len)?;
-        let res = N::from_bytes(&bytes);
+        let res = N::tcn_from_bytes(&bytes);
         if bits_len % 8 != 0 {
-            return Ok(res.shr(8 - bits_len % 8));
+            return Ok(res.tcn_shr(8 - bits_len % 8));
         }
         Ok(res)
     }

@@ -13,18 +13,18 @@ pub trait TLBType: Sized + Clone {
     /// https://docs.ton.org/v3/documentation/data-formats/tlb/tl-b-language#overview
     /// must be implemented by all TLB objects
     /// doesn't include prefix handling
-    fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError>;
-    fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError>;
+    fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError>;
+    fn write_definition(&self, builder: &mut CellBuilder) -> Result<(), TonLibError>;
 
     /// interface - must be used by external code to read/write TLB objects
     fn read(parser: &mut CellParser) -> Result<Self, TonLibError> {
         Self::verify_prefix(parser)?;
-        Self::read_def(parser)
+        Self::read_definition(parser)
     }
 
     fn write(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
         Self::write_prefix(builder)?;
-        self.write_def(builder)
+        self.write_definition(builder)
     }
 
     // Utilities

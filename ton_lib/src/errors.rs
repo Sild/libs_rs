@@ -1,4 +1,5 @@
 use hex::FromHexError;
+use num_bigint::BigUint;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -53,6 +54,8 @@ pub enum TonLibError {
     TLBObjectNoValue(String),
     #[error("TLBSnakeFormat: Unsupported bits_len ({0})")]
     TLBSnakeFormatUnsupportedBitsLen(u32),
+    #[error("TLBSnakeFormat: Wrong key_bits_len: exp={exp}, got={got} for key={key}")]
+    TLBDictWrongKeyLen { exp: usize, got: usize, key: BigUint },
 
     #[error("TonAddressParseError: address={0}, err: {1}")]
     TonAddressParseError(String, String),

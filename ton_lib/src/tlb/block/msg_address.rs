@@ -1,7 +1,8 @@
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
-use crate::tlb::primitives::dyn_len::{ConstLen, VarLen};
+use crate::tlb::primitives::dyn_len::const_len::ConstLen;
+use crate::tlb::primitives::dyn_len::var_len::VarLen;
 use crate::tlb::tlb_type::TLBPrefix;
 use crate::tlb::tlb_type::TLBType;
 use ton_lib_proc_macro::TLBDerive;
@@ -60,7 +61,7 @@ impl TLBType for MsgAddressIntVar {
     #[rustfmt::skip]
     const PREFIX: TLBPrefix = TLBPrefix { value: 0b11, bits_len: 2};
 
-    fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
+    fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
         let anycast = TLBType::read(parser)?;
         let addr_bits_len: ConstLen<_, 9> = TLBType::read(parser)?;
         let workchain = TLBType::read(parser)?;
@@ -73,7 +74,7 @@ impl TLBType for MsgAddressIntVar {
         })
     }
 
-    fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
+    fn write_definition(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
         self.anycast.write(builder)?;
         self.addr_bits_len.write(builder)?;
         self.workchain.write(builder)?;

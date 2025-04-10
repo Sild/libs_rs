@@ -9,7 +9,7 @@ use crate::tlb::TLBType;
 use std::ops::Deref;
 
 impl TLBType for TonCell {
-    fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
+    fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
         let bits_left = parser.data_bits_left()?;
 
         if parser.cell.data_bits_len == bits_left as usize && parser.next_ref_pos == 0 {
@@ -43,7 +43,7 @@ impl TLBType for TonCell {
         }
     }
 
-    fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
+    fn write_definition(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
         builder.write_bits(&self.data, self.data_bits_len as u32)?;
         self.refs.iter().cloned().try_for_each(|r| builder.write_ref(r))
     }
@@ -53,19 +53,19 @@ impl TLBType for TonCell {
 
 /// Have the same behavior as TonCell. To store object as a child cell, use TLBRef wrapper
 impl TLBType for TonCellRef {
-    fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> { Ok(TonCell::read(parser)?.into_ref()) }
+    fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> { Ok(TonCell::read(parser)?.into_ref()) }
 
-    fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> { self.deref().write(builder) }
+    fn write_definition(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> { self.deref().write(builder) }
 
     fn to_cell(&self) -> Result<TonCell, TonLibError> { Ok(self.deref().clone()) }
 }
 
 impl TLBType for TonHash {
-    fn read_def(parser: &mut CellParser) -> Result<Self, TonLibError> {
+    fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
         TonHash::from_vec(parser.read_bits(TonHash::BITS_LEN as u32)?)
     }
 
-    fn write_def(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
+    fn write_definition(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
         builder.write_bits(self.as_slice(), TonHash::BITS_LEN as u32)
     }
 }
