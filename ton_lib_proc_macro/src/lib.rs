@@ -4,6 +4,8 @@ mod tlb_derive_struct;
 use crate::tlb_derive_enum::tlb_derive_enum;
 use crate::tlb_derive_struct::tlb_derive_struct;
 use proc_macro::TokenStream;
+use proc_macro_crate::{crate_name, FoundCrate};
+use quote::{format_ident, quote};
 use syn::Data;
 
 #[derive(deluxe::ExtractAttributes)]
@@ -33,11 +35,21 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
         Err(e) => return e.into_compile_error().into(),
     };
 
+    let found_crate = crate_name("ton_lib").expect("ton_lib crate not found");
+
+    let crate_path = match found_crate {
+        FoundCrate::Itself => quote::quote! { crate },
+        FoundCrate::Name(name) => {
+            let ident = format_ident!("{}", name);
+            quote! { #ident }
+        }
+    };
+
     let ident = &input.ident;
 
     let (read_def_tokens, write_def_tokens) = match &mut input.data {
-        Data::Struct(data) => tlb_derive_struct(&header_attrs, data),
-        Data::Enum(data) => tlb_derive_enum(ident, data),
+        Data::Struct(data) => tlb_derive_struct(&crate_path, &header_attrs, data),
+        Data::Enum(data) => tlb_derive_enum(&crate_path, ident, data),
         _ => panic!("TLBDerive only supports structs and enums"),
     };
 
@@ -45,14 +57,14 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
     let prefix_bits_len = header_attrs.bits_len.unwrap_or(0);
 
     quote::quote! {
-        impl TLBType for #ident {
-            const PREFIX: TLBPrefix = TLBPrefix::new(#prefix_val, #prefix_bits_len);
+        impl #crate_path::tlb::tlb_type::TLBType for #ident {
+            const PREFIX: #crate_path::tlb::tlb_type::TLBPrefix = #crate_path::tlb::tlb_type::TLBPrefix::new(#prefix_val, #prefix_bits_len);
 
-            fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
+            fn read_definition(parser: &mut #crate_path::cell::build_parse::parser::CellParser) -> Result<Self, #crate_path::errors::TonLibError> {
                 #read_def_tokens
             }
 
-            fn write_definition(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
+            fn write_definition(&self, dst: &mut #crate_path::cell::build_parse::builder::CellBuilder) -> Result<(), #crate_path::errors::TonLibError> {
                 #write_def_tokens
             }
         }

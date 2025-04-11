@@ -9,11 +9,7 @@ use std::ops::{Deref, DerefMut};
 pub struct UnaryLen(pub u32);
 
 impl UnaryLen {
-    pub fn new<D: Into<u32>>(data: D) -> Self { Self(data.into()) }
-}
-
-impl From<u32> for UnaryLen {
-    fn from(value: u32) -> Self { Self(value) }
+    pub fn new<T: Into<u32>>(data: T) -> Self { Self(data.into()) }
 }
 
 impl Deref for UnaryLen {

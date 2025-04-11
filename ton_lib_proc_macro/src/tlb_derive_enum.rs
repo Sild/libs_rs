@@ -3,7 +3,11 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DataEnum, Fields};
 
-pub(crate) fn tlb_derive_enum(ident: &Ident, data: &mut DataEnum) -> (TokenStream, TokenStream) {
+pub(crate) fn tlb_derive_enum(
+    crate_path: &TokenStream,
+    ident: &Ident,
+    data: &mut DataEnum,
+) -> (TokenStream, TokenStream) {
     let variant_readers = data.variants.iter().map(|variant| {
         let variant_name = &variant.ident;
         // Expect single unnamed field (like `Std(...)`)
@@ -17,7 +21,7 @@ pub(crate) fn tlb_derive_enum(ident: &Ident, data: &mut DataEnum) -> (TokenStrea
         quote! {
                 match #field_type::read(parser) {
                     Ok(res) => return Ok(#ident::#variant_name(res)),
-                    Err(TonLibError::TLBWrongPrefix { .. }) => {},
+                    Err(#crate_path::errors::TonLibError::TLBWrongPrefix { .. }) => {},
                     Err(err) => return Err(err),
                 };
         }
@@ -40,7 +44,7 @@ pub(crate) fn tlb_derive_enum(ident: &Ident, data: &mut DataEnum) -> (TokenStrea
 
     let read_impl = quote! {
         #(#variant_readers)*
-        Err(TonLibError::TLBEnumOutOfOptions)
+        Err(#crate_path::errors::TonLibError::TLBEnumOutOfOptions)
     };
 
     let write_impl = quote! {

@@ -26,3 +26,4 @@ tlb_num_impl!(u16, 16);
 tlb_num_impl!(u32, 32);
 tlb_num_impl!(u64, 64);
 tlb_num_impl!(u128, 128);
+tlb_num_impl!(usize, 64);

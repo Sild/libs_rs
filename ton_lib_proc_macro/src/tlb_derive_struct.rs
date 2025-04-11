@@ -10,7 +10,11 @@ struct FieldInfo {
     attrs: TLBFieldAttrs,
 }
 
-pub(crate) fn tlb_derive_struct(header_attrs: &TLBHeaderAttrs, data: &mut DataStruct) -> (TokenStream, TokenStream) {
+pub(crate) fn tlb_derive_struct(
+    crate_path: &TokenStream,
+    header_attrs: &TLBHeaderAttrs,
+    data: &mut DataStruct,
+) -> (TokenStream, TokenStream) {
     let fields = match &mut data.fields {
         Fields::Named(fields) => &mut fields.named, // For struct { field1: T, field2: T }
         Fields::Unnamed(fields) => &mut fields.unnamed, // For tuple struct (T, T)
@@ -36,24 +40,28 @@ pub(crate) fn tlb_derive_struct(header_attrs: &TLBHeaderAttrs, data: &mut DataSt
         .collect::<Vec<_>>();
 
     if fields_info.is_empty() || fields[0].ident.is_some() {
-        derive_named_struct(header_attrs, &fields_info)
+        derive_named_struct(crate_path, header_attrs, &fields_info)
     } else {
-        derive_unnamed_struct(header_attrs, &fields_info)
+        derive_unnamed_struct(crate_path, header_attrs, &fields_info)
     }
 }
 
-fn derive_named_struct(header_attrs: &TLBHeaderAttrs, fields: &[FieldInfo]) -> (TokenStream, TokenStream) {
+fn derive_named_struct(
+    crate_path: &TokenStream,
+    header_attrs: &TLBHeaderAttrs,
+    fields: &[FieldInfo],
+) -> (TokenStream, TokenStream) {
     let mut read_tokens = Vec::with_capacity(fields.len());
     let mut init_tokens = Vec::with_capacity(fields.len());
     let mut write_tokens = Vec::with_capacity(fields.len());
     for field in fields {
         let ident = field.ident.as_ref().unwrap();
         if let Some(bits_len) = field.attrs.bits_len {
-            read_tokens.push(quote!(let #ident: ConstLen<_, #bits_len> = TLBType::read(parser)?;));
+            read_tokens.push(quote!(let #ident: #crate_path::tlb::primitives::dyn_len::const_len::ConstLen<_, #bits_len> = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
             init_tokens.push(quote!(#ident: #ident.0,));
-            write_tokens.push(quote!(let #ident = ConstLen::<_, #bits_len>(&self.#ident); #ident.write(dst)?;));
+            write_tokens.push(quote!(let #ident = #crate_path::tlb::primitives::dyn_len::const_len::ConstLen::<_, #bits_len>(&self.#ident); #ident.write(dst)?;));
         } else {
-            read_tokens.push(quote!(let #ident = TLBType::read(parser)?;));
+            read_tokens.push(quote!(let #ident = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
             init_tokens.push(quote!(#ident,));
             write_tokens.push(quote!(self.#ident.write(dst)?;));
         }
@@ -77,7 +85,11 @@ fn derive_named_struct(header_attrs: &TLBHeaderAttrs, fields: &[FieldInfo]) -> (
     (read_impl_token, write_impl_token)
 }
 
-fn derive_unnamed_struct(header_attrs: &TLBHeaderAttrs, fields: &[FieldInfo]) -> (TokenStream, TokenStream) {
+fn derive_unnamed_struct(
+    crate_path: &TokenStream,
+    header_attrs: &TLBHeaderAttrs,
+    fields: &[FieldInfo],
+) -> (TokenStream, TokenStream) {
     let mut read_tokens = Vec::with_capacity(fields.len());
     let mut init_tokens = Vec::with_capacity(fields.len());
     let mut write_tokens = Vec::with_capacity(fields.len());
@@ -85,12 +97,12 @@ fn derive_unnamed_struct(header_attrs: &TLBHeaderAttrs, fields: &[FieldInfo]) ->
         let position = Index::from(field.position);
         let read_ident = format_ident!("field_{}", field.position);
         if let Some(bits_len) = field.attrs.bits_len {
-            read_tokens.push(quote!(let #read_ident: ConstLen<_, #bits_len> = TLBType::read(parser)?;));
+            read_tokens.push(quote!(let #read_ident: #crate_path:::tlb::primitives::dyn_len::const_len::ConstLen<_, #bits_len> = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
             init_tokens.push(quote!(#read_ident.0,));
             write_tokens
-                .push(quote!(let #read_ident = ConstLen::<_, #bits_len>(&self.#position); #read_ident.write(dst)?;));
+                .push(quote!(let #read_ident = #crate_path:::tlb::primitives::dyn_len::const_len::ConstLen::<_, #bits_len>(&self.#position); #read_ident.write(dst)?;));
         } else {
-            read_tokens.push(quote!(let #read_ident = TLBType::read(parser)?;));
+            read_tokens.push(quote!(let #read_ident = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
             init_tokens.push(quote!(#read_ident,));
             write_tokens.push(quote!(self.#position.write(dst)?;));
         }

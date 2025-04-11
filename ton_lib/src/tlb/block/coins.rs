@@ -1,10 +1,5 @@
-use crate::cell::build_parse::builder::CellBuilder;
-use crate::cell::build_parse::parser::CellParser;
 use crate::cell::ton_cell::TonCellRef;
-use crate::errors::TonLibError;
 use crate::tlb::primitives::dyn_len::var_len::VarLen;
-use crate::tlb::tlb_type::TLBPrefix;
-use crate::tlb::tlb_type::TLBType;
 use num_bigint::BigUint;
 use std::ops::{Deref, DerefMut};
 use ton_lib_proc_macro::TLBDerive;
@@ -17,7 +12,7 @@ pub struct Grams(pub VarLen<BigUint, 4, true>);
 #[derive(Clone, Debug, PartialEq, TLBDerive)]
 pub struct CurrencyCollection {
     pub grams: Grams,
-    pub other: Option<TonCellRef>, // dict_data, but it's equal to Option<TonCellRef> in tlb format
+    pub other: Option<TonCellRef>, // dict, but it's equal to Option<TonCellRef> in tlb format
 }
 
 impl Grams {
@@ -47,8 +42,8 @@ impl DerefMut for Grams {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::tlb::block::coins::CurrencyCollection;
+    use crate::tlb::TLBType;
 
     #[test]
     fn test_currency_collection() -> anyhow::Result<()> {

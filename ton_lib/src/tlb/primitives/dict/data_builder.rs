@@ -22,7 +22,7 @@ impl<V: TLBType> DictDataBuilder<V> {
         mut keys_sorted: Vec<BigUint>,
         values_sorted: Vec<V>,
     ) -> Result<Self, TonLibError> {
-        // we support writing empty dict_data, but it's usually handled by 0 bit in parent cell
+        // we support writing empty dict, but it's usually handled by 0 bit in parent cell
         prepare_keys(&mut keys_sorted, key_bits_len)?;
         let builder = DictDataBuilder {
             keys_sorted,

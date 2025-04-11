@@ -3,8 +3,8 @@ use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 use crate::tlb::primitives::dyn_len::const_len::ConstLen;
 use crate::tlb::primitives::dyn_len::var_len::VarLen;
-use crate::tlb::tlb_type::TLBPrefix;
 use crate::tlb::tlb_type::TLBType;
+use crate::tlb::TLBPrefix;
 use ton_lib_proc_macro::TLBDerive;
 
 // https://github.com/ton-blockchain/ton/blob/59a8cf0ae5c3062d14ec4c89a04fee80b5fd05c1/crypto/block/block.tlb#L100

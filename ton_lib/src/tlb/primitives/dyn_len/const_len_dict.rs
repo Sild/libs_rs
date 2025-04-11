@@ -1,8 +1,8 @@
 // use crate::cell::build_parse::builder::CellBuilder;
 // use crate::cell::build_parse::parser::CellParser;
 // use crate::errors::TonLibError;
-// use crate::tlb::primitives::dict_data::data_builder::DictDataBuilder;
-// use crate::tlb::primitives::dict_data::data_parser::DictDataParser;
+// use crate::tlb::primitives::dict::data_builder::DictDataBuilder;
+// use crate::tlb::primitives::dict::data_parser::DictDataParser;
 // use crate::tlb::primitives::dyn_len::const_len::ConstLen;
 // use crate::tlb::tlb_type::TLBType;
 // use num_bigint::BigUint;
