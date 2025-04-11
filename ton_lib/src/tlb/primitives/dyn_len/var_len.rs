@@ -1,3 +1,4 @@
+use crate::errors::TonLibError;
 use std::ops::{Deref, DerefMut};
 
 /// VarLen: store data len, and then data itself
@@ -11,15 +12,11 @@ pub struct VarLen<T, const BITS_LEN_LEN: u32, const LEN_IN_BYTES: bool = false> 
     pub len: u32,
 }
 
-impl<T, const L: u32, const BL: bool> VarLen<T, L, BL> {
-    pub fn new<D: Into<T>>(data: D, len: u32) -> Self { Self { len, data: data.into() } }
-}
-
-impl<T, const L: u32, const LB: bool> From<(u32, T)> for VarLen<T, L, LB> {
-    fn from(value: (u32, T)) -> Self {
+impl<T, const L: u32, const LEN_IN_BYTES: bool> VarLen<T, L, LEN_IN_BYTES> {
+    pub fn new<D: Into<T>>(data: D, bits_len: u32) -> Self {
         Self {
-            len: value.0,
-            data: value.1,
+            data: data.into(),
+            len: if LEN_IN_BYTES { bits_len.div_ceil(8) } else { bits_len },
         }
     }
 }
@@ -49,7 +46,7 @@ mod tests {
         assert_eq!(obj, parsed);
 
         // len in bytes
-        let obj = VarLen::<u32, 16, true>::new(1u8, 2);
+        let obj = VarLen::<u32, 16, true>::new(1u8, 16);
         let cell = obj.to_cell()?;
         // 16 bits of length (value = 2), and then 16 (value * 8) bits of data (value = 1)
         assert_eq!(&cell.data, &[0b00000000, 0b00000010, 0b00000000, 0b00000001]);

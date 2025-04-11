@@ -92,7 +92,7 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
                     let ident = &f.ident;
                     if let Some(bits_len) = f.attrs.bits_len {
                         quote!(
-                            let tmp_ident = ConstLen::<_, #bits_len>::from(&self.#ident);
+                            let tmp_ident = ConstLen::<_, #bits_len>(&self.#ident);
                             tmp_ident.write(dst)?;
                         )
                     } else {

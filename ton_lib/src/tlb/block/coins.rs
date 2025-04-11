@@ -23,8 +23,10 @@ pub struct CurrencyCollection {
 
 impl Grams {
     pub fn new<T: Into<BigUint>>(amount: T) -> Self {
+        let amount = amount.into();
+        let bits_len = amount.bits() as u32;
         Self {
-            amount: (4, amount.into()).into(),
+            amount: VarLen::new(amount, bits_len),
         }
     }
 }

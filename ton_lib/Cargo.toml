@@ -21,12 +21,10 @@ sha2 = {version = "0.10"}
 crc = "3.2.1"
 hex = "0.4.3"
 base64 = "0.22"
-fastnum = { version = "0.2", optional = true }
 num-bigint = { version = "0.4" }
 num-traits = { version = "0.2.19" }
 
 [dev-dependencies]
-ton_lib = { path = ".", features = ["fastnum"] }
 anyhow = "1.0"
 tokio-test = "0.4"
 tonlib-core = "0.24.2"

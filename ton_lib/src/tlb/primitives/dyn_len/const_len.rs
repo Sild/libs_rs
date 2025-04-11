@@ -6,14 +6,6 @@ use std::ops::{Deref, DerefMut};
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConstLen<T, const BITS_LEN: u32>(pub T);
 
-impl<T, const L: u32> ConstLen<T, L> {
-    pub fn new<D: Into<T>>(data: D) -> Self { Self(data.into()) }
-}
-
-impl<T, const L: u32> From<T> for ConstLen<T, L> {
-    fn from(value: T) -> Self { Self(value) }
-}
-
 impl<T, const L: u32> Deref for ConstLen<T, L> {
     type Target = T;
     fn deref(&self) -> &Self::Target { &self.0 }
@@ -30,7 +22,7 @@ mod tests {
 
     #[test]
     fn test_const_len() -> anyhow::Result<()> {
-        let obj = ConstLen::<u32, 24>::new(1u8);
+        let obj = ConstLen::<_, 24>(1);
         let cell = obj.to_cell()?;
         assert_eq!(&cell.data, &[0, 0, 1]);
         let parsed = ConstLen::<u32, 24>::from_cell(&cell)?;

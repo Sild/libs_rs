@@ -4,6 +4,7 @@ use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::ton_cell::TonCell;
 use crate::errors::TonLibError;
 use crate::errors::TonLibError::TLBDictWrongKeyLen;
+use crate::tlb::primitives::unary_len::UnaryLen;
 use crate::tlb::TLBType;
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
@@ -137,10 +138,8 @@ impl<V: TLBType> DictDataBuilder<V> {
             }
             LabelType::Short => {
                 builder.write_bit(false)?;
-                for _ in 0..label_len {
-                    builder.write_bit(true)?;
-                }
-                builder.write_bit(false)?;
+                let unary_len = UnaryLen(label_len);
+                unary_len.write(builder)?;
                 builder.write_num(&fair_label, label_len)?;
             }
             LabelType::Long => {
