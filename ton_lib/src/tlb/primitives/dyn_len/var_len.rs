@@ -1,4 +1,3 @@
-use crate::errors::TonLibError;
 use std::ops::{Deref, DerefMut};
 
 /// VarLen: store data len, and then data itself

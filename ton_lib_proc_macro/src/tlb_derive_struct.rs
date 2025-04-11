@@ -1,11 +1,12 @@
 use crate::{TLBFieldAttrs, TLBHeaderAttrs};
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use std::process::exit;
-use syn::{DataStruct, Fields};
+use syn::{DataStruct, Fields, Index};
 
 struct FieldInfo {
-    ident: syn::Ident,
+    ident: Option<syn::Ident>,
+    position: usize,
     attrs: TLBFieldAttrs,
 }
 
@@ -18,71 +19,96 @@ pub(crate) fn tlb_derive_struct(header_attrs: &TLBHeaderAttrs, data: &mut DataSt
 
     let fields_info = fields
         .iter_mut()
-        .map(|f| {
-            let ident = &f.ident;
+        .enumerate()
+        .map(|(position, field)| {
+            let ident = &field.ident;
 
-            let field_attrs: TLBFieldAttrs = match deluxe::extract_attributes(&mut f.attrs) {
+            let field_attrs: TLBFieldAttrs = match deluxe::extract_attributes(&mut field.attrs) {
                 Ok(desc) => desc,
                 Err(_err) => exit(777),
             };
             FieldInfo {
-                ident: ident.clone().unwrap(),
+                ident: ident.clone(),
+                position,
                 attrs: field_attrs,
             }
         })
         .collect::<Vec<_>>();
 
-    let mut read_def_str = fields_info
-        .iter()
-        .map(|f| {
-            let ident = &f.ident;
-            if let Some(bits_len) = f.attrs.bits_len {
-                quote!(
-                    let ident_tmp: ConstLen<_, #bits_len> = TLBType::read(parser)?;
-                    let #ident = ident_tmp.0;
-                )
-            } else {
-                quote!(let #ident = TLBType::read(parser)?;)
-            }
-        })
-        .collect::<Vec<_>>();
+    if fields_info.is_empty() || fields[0].ident.is_some() {
+        derive_named_struct(header_attrs, &fields_info)
+    } else {
+        derive_unnamed_struct(header_attrs, &fields_info)
+    }
+}
 
-    if *header_attrs.ensure_empty.as_ref().unwrap_or(&false) {
-        read_def_str.push(quote!(parser.ensure_empty()?;));
+fn derive_named_struct(header_attrs: &TLBHeaderAttrs, fields: &[FieldInfo]) -> (TokenStream, TokenStream) {
+    let mut read_tokens = Vec::with_capacity(fields.len());
+    let mut init_tokens = Vec::with_capacity(fields.len());
+    let mut write_tokens = Vec::with_capacity(fields.len());
+    for field in fields {
+        let ident = field.ident.as_ref().unwrap();
+        if let Some(bits_len) = field.attrs.bits_len {
+            read_tokens.push(quote!(let #ident: ConstLen<_, #bits_len> = TLBType::read(parser)?;));
+            init_tokens.push(quote!(#ident: #ident.0,));
+            write_tokens.push(quote!(let #ident = ConstLen::<_, #bits_len>(&self.#ident); #ident.write(dst)?;));
+        } else {
+            read_tokens.push(quote!(let #ident = TLBType::read(parser)?;));
+            init_tokens.push(quote!(#ident,));
+            write_tokens.push(quote!(self.#ident.write(dst)?;));
+        }
     }
 
-    let init_obj_str = fields_info
-        .iter()
-        .map(|f| {
-            let ident = &f.ident;
-            quote!(#ident,)
-        })
-        .collect::<Vec<_>>();
-
-    let write_def_str = fields_info
-        .iter()
-        .map(|f| {
-            let ident = &f.ident;
-            if let Some(bits_len) = f.attrs.bits_len {
-                quote!(
-                    let tmp_ident = ConstLen::<_, #bits_len>(&self.#ident);
-                    tmp_ident.write(dst)?;
-                )
-            } else {
-                quote!(self.#ident.write(dst)?;)
-            }
-        })
-        .collect::<Vec<_>>();
+    if header_attrs.ensure_empty.unwrap_or(false) {
+        read_tokens.push(quote!(parser.ensure_empty()?;));
+    }
 
     let read_impl_token = quote::quote! {
-        #(#read_def_str)*
+        #(#read_tokens)*
         Ok(Self {
-            #(#init_obj_str)*
+            #(#init_tokens)*
         })
     };
 
     let write_impl_token = quote::quote! {
-        #(#write_def_str)*
+        #(#write_tokens)*
+        Ok(())
+    };
+    (read_impl_token, write_impl_token)
+}
+
+fn derive_unnamed_struct(header_attrs: &TLBHeaderAttrs, fields: &[FieldInfo]) -> (TokenStream, TokenStream) {
+    let mut read_tokens = Vec::with_capacity(fields.len());
+    let mut init_tokens = Vec::with_capacity(fields.len());
+    let mut write_tokens = Vec::with_capacity(fields.len());
+    for field in fields {
+        let position = Index::from(field.position);
+        let read_ident = format_ident!("field_{}", field.position);
+        if let Some(bits_len) = field.attrs.bits_len {
+            read_tokens.push(quote!(let #read_ident: ConstLen<_, #bits_len> = TLBType::read(parser)?;));
+            init_tokens.push(quote!(#read_ident.0,));
+            write_tokens
+                .push(quote!(let #read_ident = ConstLen::<_, #bits_len>(&self.#position); #read_ident.write(dst)?;));
+        } else {
+            read_tokens.push(quote!(let #read_ident = TLBType::read(parser)?;));
+            init_tokens.push(quote!(#read_ident,));
+            write_tokens.push(quote!(self.#position.write(dst)?;));
+        }
+    }
+
+    if header_attrs.ensure_empty.unwrap_or(false) {
+        read_tokens.push(quote!(parser.ensure_empty()?;));
+    }
+
+    let read_impl_token = quote::quote! {
+        #(#read_tokens)*
+        Ok(Self(
+            #(#init_tokens)*
+        ))
+    };
+
+    let write_impl_token = quote::quote! {
+        #(#write_tokens)*
         Ok(())
     };
     (read_impl_token, write_impl_token)
