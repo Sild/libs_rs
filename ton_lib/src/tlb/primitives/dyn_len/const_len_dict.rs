@@ -11,7 +11,7 @@
 // use std::fmt::Debug;
 // use std::hash::Hash;
 // // Implementations are highly inefficient.
-// 
+//
 // // macro_rules! tlb_const_len_dict_impl {
 // //     ($t:tt) => {
 // //         impl<K, V, const L: u32> TLBType for ConstLen<$t<K, V>, L>
@@ -60,7 +60,7 @@
 // // tlb_const_len_dict_impl!(HashMap);
 // // tlb_const_len_dict_impl!(BTreeMap);
 // //
-// 
+//
 // impl<K, V, const L: u32> TLBType for ConstLen<HashMap<K, V>, L>
 // where
 //     K: TryFrom<BigUint> + Into<BigUint> + Clone + Ord + Hash,
@@ -71,21 +71,21 @@
 //         if !parser.read_bit()? {
 //             return Ok(ConstLen(HashMap::new()));
 //         }
-// 
+//
 //         let data_cell = parser.read_next_ref()?;
 //         let mut data_parser = DictDataParser::new(L as usize);
 //         let data_raw = data_parser.parse::<V>(&mut CellParser::new(data_cell))?;
-// 
+//
 //         let data = data_raw.into_iter().map(|(k, v)| (K::try_from(k).unwrap(), v)).collect();
 //         Ok(ConstLen(data))
 //     }
-// 
+//
 //     fn write_definition(&self, dst: &mut CellBuilder) -> Result<(), TonLibError> {
 //         if self.is_empty() {
 //             dst.write_bit(false)?;
 //             return Ok(());
 //         }
-// 
+//
 //         let mut keys = Vec::with_capacity(self.len());
 //         for key in self.keys() {
 //             keys.push(key);
@@ -103,11 +103,11 @@
 //         dst.write_ref(dict_data_cell)
 //     }
 // }
-// 
+//
 // #[cfg(test)]
 // mod tests {
 //     use super::*;
-// 
+//
 //     #[test]
 //     fn test_blockchain_data() -> anyhow::Result<()> {
 //         let expected_data = HashMap::from([

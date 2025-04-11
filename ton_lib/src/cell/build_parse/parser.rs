@@ -130,7 +130,6 @@ impl<'a> CellParser<'a> {
     }
 }
 
-#[cfg(feature = "fastnum")]
 #[cfg(test)]
 mod tests {
     use super::*;
