@@ -1,3 +1,4 @@
+use crate::boc::boc::BOC;
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
 use crate::cell::meta::cell_meta::CellMeta;
@@ -7,6 +8,7 @@ use crate::cell::ton_hash::TonHash;
 use crate::errors::TonLibError;
 use crate::tlb::TLBType;
 use std::ops::Deref;
+use std::sync::Arc;
 
 impl TLBType for TonCell {
     fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
@@ -48,6 +50,11 @@ impl TLBType for TonCell {
         self.refs.iter().cloned().try_for_each(|r| builder.write_ref(r))
     }
 
+    fn from_boc(boc: &[u8]) -> Result<Self, TonLibError> {
+        // unwrap is safe - no one own Reference expect this function
+        Ok(Arc::try_unwrap(BOC::from_bytes(boc)?.single_root()?).unwrap())
+    }
+
     fn to_cell(&self) -> Result<TonCell, TonLibError> { Ok(self.clone()) }
 }
 
@@ -57,7 +64,13 @@ impl TLBType for TonCellRef {
 
     fn write_definition(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> { self.deref().write(builder) }
 
+    fn from_cell_ref(cell: &TonCellRef) -> Result<Self, TonLibError> { Ok(cell.clone()) }
+
+    fn from_boc(boc: &[u8]) -> Result<Self, TonLibError> { BOC::from_bytes(boc)?.single_root() }
+
     fn to_cell(&self) -> Result<TonCell, TonLibError> { Ok(self.deref().clone()) }
+
+    fn to_cell_ref(&self) -> Result<TonCellRef, TonLibError> { Ok(self.clone()) }
 }
 
 impl TLBType for TonHash {

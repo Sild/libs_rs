@@ -1,7 +1,7 @@
 use crate::boc::boc::BOC;
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
-use crate::cell::ton_cell::TonCell;
+use crate::cell::ton_cell::{TonCell, TonCellRef};
 use crate::cell::ton_hash::TonHash;
 use crate::errors::TonLibError;
 use std::ops::Deref;
@@ -33,12 +33,14 @@ pub trait TLBType: Sized + Clone {
     /// Reading
     fn from_cell(cell: &TonCell) -> Result<Self, TonLibError> { Self::read(&mut CellParser::new(cell)) }
 
+    fn from_cell_ref(cell: &TonCellRef) -> Result<Self, TonLibError> { Self::from_cell(cell) }
+
     fn from_boc(boc: &[u8]) -> Result<Self, TonLibError> {
         Self::from_cell(BOC::from_bytes(boc)?.single_root()?.deref())
     }
 
-    fn from_boc_hex(boc_hex: &str) -> Result<Self, TonLibError> {
-        Self::from_cell(BOC::from_hex(boc_hex)?.single_root()?.deref())
+    fn from_boc_hex<T: AsRef<[u8]>>(boc_hex: T) -> Result<Self, TonLibError> {
+        Self::from_boc(&hex::decode(boc_hex.as_ref())?)
     }
 
     /// Writing
@@ -47,6 +49,8 @@ pub trait TLBType: Sized + Clone {
         self.write(&mut builder)?;
         builder.build()
     }
+
+    fn to_cell_ref(&self) -> Result<TonCellRef, TonLibError> { Ok(self.to_cell()?.into_ref()) }
 
     fn to_boc(&self, add_crc32: bool) -> Result<Vec<u8>, TonLibError> {
         let mut builder = CellBuilder::new();
