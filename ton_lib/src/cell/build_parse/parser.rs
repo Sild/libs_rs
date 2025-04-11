@@ -44,7 +44,7 @@ impl<'a> CellParser<'a> {
         self.data_reader.read_bytes(&mut dst[..full_bytes])?;
 
         if remaining_bits != 0 {
-            let last_byte = self.data_reader.read::<u8>(remaining_bits)?;
+            let last_byte = self.data_reader.read_var::<u8>(remaining_bits)?;
             dst[full_bytes] = last_byte << (8 - remaining_bits);
         }
         Ok(dst)
@@ -56,7 +56,7 @@ impl<'a> CellParser<'a> {
         }
         self.ensure_enough_bits(bits_len)?;
         if N::IS_PRIMITIVE {
-            let primitive = self.data_reader.read::<N::Primitive>(bits_len)?;
+            let primitive = self.data_reader.read_var::<N::Primitive>(bits_len)?;
             return Ok(N::tcn_from_primitive(primitive));
         }
         let bytes = self.read_bits(bits_len)?;

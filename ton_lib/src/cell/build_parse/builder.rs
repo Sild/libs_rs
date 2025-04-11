@@ -77,7 +77,7 @@ impl CellBuilder {
         if first_byte_bits_len == bits_len {
             first_byte_val >>= 8 - bits_offset - bits_len
         }
-        self.data_writer.write(first_byte_bits_len, first_byte_val)?;
+        self.data_writer.write_var(first_byte_bits_len, first_byte_val)?;
 
         data_ref = &data_ref[1..];
         bits_len -= first_byte_bits_len;
@@ -86,7 +86,7 @@ impl CellBuilder {
         self.data_writer.write_bytes(&data_ref[0..full_bytes])?;
         let rest_bits_len = bits_len % 8;
         if rest_bits_len != 0 {
-            self.data_writer.write(rest_bits_len, data_ref[full_bytes] >> (8 - rest_bits_len))?;
+            self.data_writer.write_var(rest_bits_len, data_ref[full_bytes] >> (8 - rest_bits_len))?;
         }
         self.data_bits_len += bits_len as usize;
         Ok(())
@@ -133,7 +133,7 @@ impl CellBuilder {
         }
 
         if let Some(unsigned) = data_ref.tcn_to_unsigned_primitive() {
-            self.data_writer.write(bits_len, unsigned)?;
+            self.data_writer.write_var(bits_len, unsigned)?;
             return Ok(());
         }
 

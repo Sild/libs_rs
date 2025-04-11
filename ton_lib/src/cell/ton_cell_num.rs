@@ -1,4 +1,4 @@
-use bitstream_io::Numeric;
+use bitstream_io::Integer;
 use num_bigint::{BigInt, BigUint};
 use num_traits::Zero;
 use std::fmt::Display;
@@ -7,8 +7,8 @@ use std::fmt::Display;
 pub trait TonCellNum: Display + Sized + Clone {
     const SIGNED: bool;
     const IS_PRIMITIVE: bool = false;
-    type Primitive: Zero + Numeric;
-    type UnsignedPrimitive: Numeric;
+    type Primitive: Zero + Integer;
+    type UnsignedPrimitive: Integer;
 
     fn tcn_from_bytes(bytes: &[u8]) -> Self;
     fn tcn_to_bytes(&self) -> Vec<u8>;
