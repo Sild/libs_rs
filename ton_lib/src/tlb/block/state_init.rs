@@ -1,6 +1,5 @@
 use crate::cell::ton_cell::TonCellRef;
 use crate::tlb::primitives::dyn_len::const_len::ConstLen;
-use crate::tlb::primitives::tlb_ref::TLBRef;
 use ton_lib_proc_macro::TLBDerive;
 
 // https://github.com/ton-blockchain/ton/blob/59a8cf0ae5c3062d14ec4c89a04fee80b5fd05c1/crypto/block/block.tlb#L281
@@ -8,10 +7,10 @@ use ton_lib_proc_macro::TLBDerive;
 pub struct StateInit {
     pub split_depth: Option<ConstLen<u8, 5>>,
     pub tick_tock: Option<TickTock>,
-    pub code: Option<TLBRef<TonCellRef>>,
-    pub data: Option<TLBRef<TonCellRef>>,
+    pub code: Option<TonCellRef>,
+    pub data: Option<TonCellRef>,
     // pub library: HashMap<TonHash, CellOwned>,
-    pub library: Option<TLBRef<TonCellRef>>,
+    pub library: Option<TonCellRef>,
 }
 
 #[derive(Debug, Clone, PartialEq, TLBDerive)]
@@ -25,8 +24,8 @@ impl StateInit {
         StateInit {
             split_depth: None,
             tick_tock: None,
-            code: Some(TLBRef::new(code)),
-            data: Some(TLBRef::new(data)),
+            code: Some(code),
+            data: Some(data),
             // library: HashMap::new(),
             library: None,
         }
