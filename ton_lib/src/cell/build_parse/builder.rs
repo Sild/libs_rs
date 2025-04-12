@@ -358,7 +358,7 @@ mod tests {
 
         let mut builder3 = CellBuilder::new();
         builder3.write_num(&0x03, 8)?;
-        builder3.write_ref(cell5.clone().into())?;
+        builder3.write_ref(cell5.clone().into_ref())?;
         let cell3 = builder3.build()?;
 
         let mut builder4 = CellBuilder::new();
@@ -371,16 +371,16 @@ mod tests {
 
         let mut builder1 = CellBuilder::new();
         builder1.write_num(&0x01, 8)?;
-        builder1.write_ref(cell3.clone().into())?;
-        builder1.write_ref(cell4.clone().into())?;
+        builder1.write_ref(cell3.clone().into_ref())?;
+        builder1.write_ref(cell4.clone().into_ref())?;
         let cell1 = builder1.build()?;
 
         let mut builder0 = CellBuilder::new();
         builder0.write_bit(true)?;
         builder0.write_num(&0b0000_0001, 8)?;
         builder0.write_num(&0b0000_0011, 8)?;
-        builder0.write_ref(cell1.clone().into())?;
-        builder0.write_ref(cell2.clone().into())?;
+        builder0.write_ref(cell1.clone().into_ref())?;
+        builder0.write_ref(cell2.clone().into_ref())?;
         let cell0 = builder0.build()?;
 
         assert_eq!(cell0.refs.len(), 2);

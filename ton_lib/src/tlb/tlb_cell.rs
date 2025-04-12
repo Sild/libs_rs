@@ -38,7 +38,7 @@ impl TLBType for TonCell {
     fn from_boc(boc: &[u8]) -> Result<Self, TonLibError> {
         // optimization - doesn't copy Cell, just takes ownership
         // unwrap is safe - no one own Reference expect this function
-        Ok(Arc::try_unwrap(BOC::from_bytes(boc)?.single_root()?).unwrap())
+        Ok(Arc::try_unwrap(BOC::from_bytes(boc)?.single_root()?.0).unwrap())
     }
 
     fn to_cell(&self) -> Result<TonCell, TonLibError> { Ok(self.clone()) }
