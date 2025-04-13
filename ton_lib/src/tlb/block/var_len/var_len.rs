@@ -1,12 +1,15 @@
 use std::ops::{Deref, DerefMut};
 
+pub type VarLenBits<T, const BITS_LEN: u32> = VarLen<T, BITS_LEN, false>;
+pub type VarLenBytes<T, const BITS_LEN: u32> = VarLen<T, BITS_LEN, true>;
+
 /// VarLen: store data len, and then data itself
 ///
 /// BITS_LEN_LEN - number of bits used to store length
 ///
 /// LEN_IN_BYTES - if true, data len is specified in bytes. Otherwise - in bits
 #[derive(Debug, Clone, PartialEq)]
-pub struct VarLen<T, const BITS_LEN_LEN: u32, const LEN_IN_BYTES: bool = false> {
+pub struct VarLen<T, const BITS_LEN: u32, const LEN_IN_BYTES: bool = false> {
     pub data: T,
     pub len: u32,
 }

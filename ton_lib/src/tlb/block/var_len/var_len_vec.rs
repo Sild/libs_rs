@@ -1,8 +1,8 @@
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
-use crate::tlb::primitives::dyn_len::var_len::VarLen;
-use crate::tlb::TLBType;
+use crate::tlb::block::var_len::var_len::VarLen;
+use crate::tlb::tlb_type::TLBType;
 
 impl<const BITS_LEN_LEN: u32, const BL: bool> TLBType for VarLen<Vec<u8>, BITS_LEN_LEN, BL> {
     fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {

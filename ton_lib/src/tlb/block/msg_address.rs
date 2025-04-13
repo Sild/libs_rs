@@ -1,11 +1,11 @@
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
-use crate::tlb::primitives::dyn_len::const_len::ConstLen;
-use crate::tlb::primitives::dyn_len::var_len::VarLen;
 use crate::tlb::tlb_type::TLBType;
-use crate::tlb::TLBPrefix;
+use crate::tlb::tlb_type::TLBPrefix;
 use ton_lib_proc_macro::TLBDerive;
+use crate::tlb::adapters::const_len::const_len::ConstLen;
+use crate::tlb::block::var_len::VarLenBits;
 
 // https://github.com/ton-blockchain/ton/blob/59a8cf0ae5c3062d14ec4c89a04fee80b5fd05c1/crypto/block/block.tlb#L100
 #[derive(Debug, Clone, PartialEq, TLBDerive)]
@@ -28,7 +28,7 @@ pub struct MsgAddressNone {}
 #[derive(Debug, Clone, PartialEq, TLBDerive)]
 #[tlb_derive(prefix = 0b01, bits_len = 2)]
 pub struct MsgAddressExtern {
-    pub address: VarLen<Vec<u8>, 9>,
+    pub address: VarLenBits<Vec<u8>, 9>,
 }
 
 // Int
@@ -52,7 +52,7 @@ pub struct MsgAddressIntStd {
 #[derive(Debug, Clone, PartialEq)]
 pub struct MsgAddressIntVar {
     pub anycast: Option<Anycast>,
-    pub addr_bits_len: ConstLen<u32, 9>,
+    pub addr_bits_len: u32, // 9 bit
     pub workchain: i32,
     pub address: Vec<u8>,
 }
@@ -63,9 +63,9 @@ impl TLBType for MsgAddressIntVar {
 
     fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
         let anycast = TLBType::read(parser)?;
-        let addr_bits_len: ConstLen<_, 9> = TLBType::read(parser)?;
+        let addr_bits_len = ConstLen::<_, 9>::read(parser)?.0;
         let workchain = TLBType::read(parser)?;
-        let address = parser.read_bits(addr_bits_len.0)?;
+        let address = parser.read_bits(addr_bits_len)?;
         Ok(Self {
             anycast,
             addr_bits_len,
@@ -76,9 +76,9 @@ impl TLBType for MsgAddressIntVar {
 
     fn write_definition(&self, builder: &mut CellBuilder) -> Result<(), TonLibError> {
         self.anycast.write(builder)?;
-        self.addr_bits_len.write(builder)?;
+        ConstLen::<_, 9>(self.addr_bits_len).write(builder)?;
         self.workchain.write(builder)?;
-        builder.write_bits(&self.address, self.addr_bits_len.0)?;
+        builder.write_bits(&self.address, self.addr_bits_len)?;
         Ok(())
     }
 }
@@ -101,13 +101,13 @@ mod from_impl {
 
 #[derive(Debug, Clone, PartialEq, TLBDerive)]
 pub struct Anycast {
-    pub rewrite_pfx: VarLen<Vec<u8>, 5>,
+    pub rewrite_pfx: VarLenBits<Vec<u8>, 5>,
 }
 
 impl Anycast {
     pub fn new(depth: u32, rewrite_pfx: Vec<u8>) -> Self {
         Self {
-            rewrite_pfx: VarLen::new(rewrite_pfx, depth),
+            rewrite_pfx: VarLenBits::new(rewrite_pfx, depth),
         }
     }
 }

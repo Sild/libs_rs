@@ -57,9 +57,9 @@ fn derive_named_struct(
     for field in fields {
         let ident = field.ident.as_ref().unwrap();
         if let Some(bits_len) = field.attrs.bits_len {
-            read_tokens.push(quote!(let #ident: #crate_path::tlb::primitives::dyn_len::const_len::ConstLen<_, #bits_len> = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
+            read_tokens.push(quote!(let #ident: #crate_path::tlb::adapters::const_len::const_len::ConstLen<_, #bits_len> = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
             init_tokens.push(quote!(#ident: #ident.0,));
-            write_tokens.push(quote!(let #ident = #crate_path::tlb::primitives::dyn_len::const_len::ConstLen::<_, #bits_len>(&self.#ident); #ident.write(dst)?;));
+            write_tokens.push(quote!(let #ident = #crate_path::tlb::adapters::const_len::const_len::ConstLen::<_, #bits_len>(&self.#ident); #ident.write(dst)?;));
         } else {
             read_tokens.push(quote!(let #ident = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
             init_tokens.push(quote!(#ident,));
@@ -97,10 +97,10 @@ fn derive_unnamed_struct(
         let position = Index::from(field.position);
         let read_ident = format_ident!("field_{}", field.position);
         if let Some(bits_len) = field.attrs.bits_len {
-            read_tokens.push(quote!(let #read_ident: #crate_path:::tlb::primitives::dyn_len::const_len::ConstLen<_, #bits_len> = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
+            read_tokens.push(quote!(let #read_ident: #crate_path:::tlb::adapters::const_len::const_len::ConstLen<_, #bits_len> = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
             init_tokens.push(quote!(#read_ident.0,));
             write_tokens
-                .push(quote!(let #read_ident = #crate_path:::tlb::primitives::dyn_len::const_len::ConstLen::<_, #bits_len>(&self.#position); #read_ident.write(dst)?;));
+                .push(quote!(let #read_ident = #crate_path:::tlb::adapters::ConstLen::<_, #bits_len>(&self.#position); #read_ident.write(dst)?;));
         } else {
             read_tokens.push(quote!(let #read_ident = #crate_path::tlb::tlb_type::TLBType::read(parser)?;));
             init_tokens.push(quote!(#read_ident,));

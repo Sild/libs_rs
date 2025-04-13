@@ -49,12 +49,12 @@ pub enum TonLibError {
         bits_left: u32,
     },
     #[error("TLBEnum: Out of options")]
-    TLBEnumOutOfOptions,
+    TLBEnumOutOfOptions, // TODO collect errors from all options
     #[error("TLBObject: No internal value found (method: {0})")]
     TLBObjectNoValue(String),
     #[error("TLBSnakeFormat: Unsupported bits_len ({0})")]
     TLBSnakeFormatUnsupportedBitsLen(u32),
-    #[error("TLBSnakeFormat: Wrong key_bits_len: exp={exp}, got={got} for key={key}")]
+    #[error("TLBDictWrongKeyLen: Wrong key_bits_len: exp={exp}, got={got} for key={key}")]
     TLBDictWrongKeyLen { exp: usize, got: usize, key: BigUint },
 
     #[error("TonAddressParseError: address={0}, err: {1}")]

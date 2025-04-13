@@ -1,6 +1,8 @@
+use std::collections::HashMap;
 use crate::cell::ton_cell::TonCellRef;
-use crate::tlb::primitives::dyn_len::const_len::ConstLen;
 use ton_lib_proc_macro::TLBDerive;
+use crate::cell::ton_hash::TonHash;
+use crate::tlb::adapters::const_len::const_len::ConstLen;
 
 // https://github.com/ton-blockchain/ton/blob/59a8cf0ae5c3062d14ec4c89a04fee80b5fd05c1/crypto/block/block.tlb#L281
 #[derive(Debug, Clone, PartialEq, TLBDerive)]
@@ -9,7 +11,8 @@ pub struct StateInit {
     pub tick_tock: Option<TickTock>,
     pub code: Option<TonCellRef>,
     pub data: Option<TonCellRef>,
-    // pub library: HashMap<TonHash, CellOwned>,
+    // #[tlb_derive(key_bits_len=256, key_adapter="DictKeyAdapterTonHash", val_adapter="DictValAdapterNone")]
+    // pub library: HashMap<TonHash, TonCellRef>,
     pub library: Option<TonCellRef>,
 }
 

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::boc::boc::BOC;
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
@@ -6,8 +7,7 @@ use crate::cell::meta::cell_type::CellType;
 use crate::cell::ton_cell::{TonCell, TonCellRef};
 use crate::cell::ton_hash::TonHash;
 use crate::errors::TonLibError;
-use crate::tlb::TLBType;
-use std::sync::Arc;
+use crate::tlb::tlb_type::TLBType;
 
 impl TLBType for TonCell {
     fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {

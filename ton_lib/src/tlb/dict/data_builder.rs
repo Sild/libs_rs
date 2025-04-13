@@ -4,23 +4,23 @@ use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::ton_cell::TonCell;
 use crate::errors::TonLibError;
 use crate::errors::TonLibError::TLBDictWrongKeyLen;
-use crate::tlb::primitives::unary_len::UnaryLen;
+use crate::tlb::block::Unary;
 use crate::tlb::TLBType;
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
 use std::mem::swap;
 
-pub(crate) struct DictDataBuilder<V: TLBType> {
+pub(crate) struct DictDataBuilder<'a, V: TLBType> {
     keys_sorted: Vec<BigUint>, // contains 1 extra leading bit set to 1
-    values_sorted: Vec<V>,
+    values_sorted: &'a [V],
     key_bits_len_left: usize,
 }
 
-impl<V: TLBType> DictDataBuilder<V> {
+impl<'a, V: TLBType> DictDataBuilder<'a, V> {
     pub(crate) fn new(
         key_bits_len: usize,
         mut keys_sorted: Vec<BigUint>,
-        values_sorted: Vec<V>,
+        values_sorted: &'a[V],
     ) -> Result<Self, TonLibError> {
         // we support writing empty dict, but it's usually handled by 0 bit in parent cell
         prepare_keys(&mut keys_sorted, key_bits_len)?;
@@ -138,7 +138,7 @@ impl<V: TLBType> DictDataBuilder<V> {
             }
             LabelType::Short => {
                 builder.write_bit(false)?;
-                let unary_len = UnaryLen(label_len);
+                let unary_len = Unary(label_len);
                 unary_len.write(builder)?;
                 builder.write_num(&fair_label, label_len)?;
             }

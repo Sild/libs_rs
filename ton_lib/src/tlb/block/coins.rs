@@ -1,12 +1,12 @@
 use crate::cell::ton_cell::TonCellRef;
-use crate::tlb::primitives::dyn_len::var_len::VarLen;
 use num_bigint::BigUint;
 use std::ops::{Deref, DerefMut};
 use ton_lib_proc_macro::TLBDerive;
+use crate::tlb::block::var_len::VarLenBytes;
 
 /// https://github.com/ton-blockchain/ton/blob/050a984163a53df16fb03f66cc445c34bfed48ed/crypto/block/block.tlb#L116
 #[derive(Clone, Debug, PartialEq, TLBDerive)]
-pub struct Grams(pub VarLen<BigUint, 4, true>);
+pub struct Grams(pub VarLenBytes<BigUint, 4>);
 
 /// https://github.com/ton-blockchain/ton/blob/050a984163a53df16fb03f66cc445c34bfed48ed/crypto/block/block.tlb#L124
 #[derive(Clone, Debug, PartialEq, TLBDerive)]
@@ -19,7 +19,7 @@ impl Grams {
     pub fn new<T: Into<BigUint>>(amount: T) -> Self {
         let amount = amount.into();
         let bits_len = amount.bits() as u32;
-        Self(VarLen::new(amount, bits_len))
+        Self(VarLenBytes::new(amount, bits_len))
     }
 }
 
@@ -43,7 +43,7 @@ impl DerefMut for Grams {
 #[cfg(test)]
 mod tests {
     use crate::tlb::block::coins::CurrencyCollection;
-    use crate::tlb::TLBType;
+    use crate::tlb::tlb_type::TLBType;
 
     #[test]
     fn test_currency_collection() -> anyhow::Result<()> {

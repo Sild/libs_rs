@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::label_type::LabelType;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
-use crate::tlb::primitives::unary_len::UnaryLen;
+use crate::tlb::block::Unary;
 use crate::tlb::TLBType;
 use num_bigint::BigUint;
 use num_traits::One;
@@ -53,7 +53,7 @@ impl DictDataParser {
                 }
             }
             LabelType::Short => {
-                let prefix_len = UnaryLen::read(parser)?;
+                let prefix_len = Unary::read(parser)?;
                 if *prefix_len != 0 {
                     let val = parser.read_num::<BigUint>(*prefix_len)?;
                     self.cur_key_prefix <<= *prefix_len;
