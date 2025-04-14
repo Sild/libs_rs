@@ -2,14 +2,14 @@
 // use num_bigint::BigUint;
 // use crate::tlb::dict::adapters_key::{DictKeyAdapter, DictValAdapter};
 // use crate::tlb::TLBType;
-// 
+//
 // pub struct Dict<K, V, KA, VA> {
 //     data: HashMap<K, V>,
 //     key_bits_len: usize,
 //     _phantom_ka: std::marker::PhantomData<KA>,
 //     _phantom_va: std::marker::PhantomData<VA>,
 // }
-// 
+//
 // impl<K, V, KA, VA, const KEY_BITS_LEN: usize> Dict<K, V, KA, VA>
 // where
 //     KA: DictKeyAdapter<K, 8>,
@@ -19,9 +19,9 @@
 //         Self { data, key_bits_len }
 //     }
 // }
-// 
-// 
-// 
+//
+//
+//
 // // use crate::cell::build_parse::builder::CellBuilder;
 // // use crate::cell::build_parse::parser::CellParser;
 // // use crate::errors::TonLibError;

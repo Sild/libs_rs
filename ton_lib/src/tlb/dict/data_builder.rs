@@ -4,8 +4,8 @@ use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::ton_cell::TonCell;
 use crate::errors::TonLibError;
 use crate::errors::TonLibError::TLBDictWrongKeyLen;
-use crate::tlb::block::Unary;
-use crate::tlb::TLBType;
+use crate::tlb::block::unary::Unary;
+use crate::tlb::tlb_type::TLBType;
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
 use std::mem::swap;
@@ -20,7 +20,7 @@ impl<'a, V: TLBType> DictDataBuilder<'a, V> {
     pub(crate) fn new(
         key_bits_len: usize,
         mut keys_sorted: Vec<BigUint>,
-        values_sorted: &'a[V],
+        values_sorted: &'a [V],
     ) -> Result<Self, TonLibError> {
         // we support writing empty dict, but it's usually handled by 0 bit in parent cell
         prepare_keys(&mut keys_sorted, key_bits_len)?;

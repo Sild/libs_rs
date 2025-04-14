@@ -1,11 +1,11 @@
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
-use crate::tlb::tlb_type::TLBType;
-use crate::tlb::tlb_type::TLBPrefix;
-use ton_lib_proc_macro::TLBDerive;
-use crate::tlb::adapters::const_len::const_len::ConstLen;
+use crate::tlb::adapters::const_len::ConstLen;
 use crate::tlb::block::var_len::VarLenBits;
+use crate::tlb::tlb_type::TLBPrefix;
+use crate::tlb::tlb_type::TLBType;
+use ton_lib_proc_macro::TLBDerive;
 
 // https://github.com/ton-blockchain/ton/blob/59a8cf0ae5c3062d14ec4c89a04fee80b5fd05c1/crypto/block/block.tlb#L100
 #[derive(Debug, Clone, PartialEq, TLBDerive)]
@@ -63,7 +63,7 @@ impl TLBType for MsgAddressIntVar {
 
     fn read_definition(parser: &mut CellParser) -> Result<Self, TonLibError> {
         let anycast = TLBType::read(parser)?;
-        let addr_bits_len = ConstLen::<_, 9>::read(parser)?.0;
+        let addr_bits_len = ConstLen::<u32, 9>::read(parser)?.0;
         let workchain = TLBType::read(parser)?;
         let address = parser.read_bits(addr_bits_len)?;
         Ok(Self {

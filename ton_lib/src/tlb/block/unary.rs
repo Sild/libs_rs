@@ -1,8 +1,8 @@
-use std::ops::{Deref, DerefMut};
 use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 use crate::tlb::tlb_type::TLBType;
+use std::ops::{Deref, DerefMut};
 
 // https://github.com/ton-blockchain/ton/blob/ed4682066978f69ffa38dd98912ca77d4f660f66/crypto/block/block.tlb#L33
 // Optimized implementation
@@ -29,15 +29,11 @@ impl TLBType for Unary {
 impl Deref for Unary {
     type Target = u32;
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+    fn deref(&self) -> &Self::Target { &self.0 }
 }
 
 impl DerefMut for Unary {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
 }
 
 #[cfg(test)]
@@ -53,7 +49,7 @@ mod tests {
         unary.write(&mut builder)?;
         let cell = builder.build()?;
         assert_eq!(cell.data_bits_len, 6);
-        assert_eq!(cell.data, vec![0b11111100]);
+        assert_eq!(cell.data, vec![0b11111000]);
         let mut parser = CellParser::new(&cell);
         let parsed_unary = Unary::read(&mut parser)?;
         assert_eq!(parsed_unary, unary);

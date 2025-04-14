@@ -1,6 +1,6 @@
-use num_bigint::BigUint;
 use crate::cell::ton_hash::TonHash;
 use crate::errors::TonLibError;
+use num_bigint::BigUint;
 
 pub trait DictKeyAdapter<K> {
     fn make_key(key: &K) -> BigUint;
@@ -10,9 +10,7 @@ pub trait DictKeyAdapter<K> {
 pub struct DictKeyAdapterTonHash;
 
 impl DictKeyAdapter<TonHash> for DictKeyAdapterTonHash {
-    fn make_key(key: &TonHash) -> BigUint {
-        BigUint::from_bytes_le(key.as_slice())
-    }
+    fn make_key(key: &TonHash) -> BigUint { BigUint::from_bytes_le(key.as_slice()) }
 
     fn extract_key(key: &BigUint) -> Result<TonHash, TonLibError> {
         let mut hash_bytes = vec![0; TonHash::BYTES_LEN];
@@ -29,5 +27,3 @@ impl DictKeyAdapter<TonHash> for DictKeyAdapterTonHash {
         TonHash::from_bytes(hash_bytes)
     }
 }
-
-

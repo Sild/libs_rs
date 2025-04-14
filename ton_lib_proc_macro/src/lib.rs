@@ -48,7 +48,7 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
     let ident = &input.ident;
 
     let (read_def_tokens, write_def_tokens) = match &mut input.data {
-        Data::Struct(data) => tlb_derive_struct(&crate_path, &header_attrs, data),
+        Data::Struct(data) => tlb_derive_struct(&header_attrs, data),
         Data::Enum(data) => tlb_derive_enum(&crate_path, ident, data),
         _ => panic!("TLBDerive only supports structs and enums"),
     };
@@ -61,10 +61,16 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
             const PREFIX: #crate_path::tlb::tlb_type::TLBPrefix = #crate_path::tlb::tlb_type::TLBPrefix::new(#prefix_val, #prefix_bits_len);
 
             fn read_definition(parser: &mut #crate_path::cell::build_parse::parser::CellParser) -> Result<Self, #crate_path::errors::TonLibError> {
+                use #crate_path::tlb::adapters::const_len::ConstLen;
+                use #crate_path::tlb::tlb_type::TLBType;
+
                 #read_def_tokens
             }
 
             fn write_definition(&self, dst: &mut #crate_path::cell::build_parse::builder::CellBuilder) -> Result<(), #crate_path::errors::TonLibError> {
+                use #crate_path::tlb::adapters::const_len::ConstLenRef;
+                use #crate_path::tlb::tlb_type::TLBType;
+
                 #write_def_tokens
             }
         }

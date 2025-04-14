@@ -1,8 +1,8 @@
 use crate::cell::ton_cell::TonCellRef;
+use crate::tlb::block::var_len::VarLenBytes;
 use num_bigint::BigUint;
 use std::ops::{Deref, DerefMut};
 use ton_lib_proc_macro::TLBDerive;
-use crate::tlb::block::var_len::VarLenBytes;
 
 /// https://github.com/ton-blockchain/ton/blob/050a984163a53df16fb03f66cc445c34bfed48ed/crypto/block/block.tlb#L116
 #[derive(Clone, Debug, PartialEq, TLBDerive)]
