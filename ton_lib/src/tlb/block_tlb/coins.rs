@@ -1,5 +1,5 @@
 use crate::cell::ton_cell::TonCellRef;
-use crate::tlb::block::var_len::var_len::VarLenBytes;
+use crate::tlb::block_tlb::var_len::var_len::VarLenBytes;
 use num_bigint::BigUint;
 use std::ops::{Deref, DerefMut};
 use ton_lib_proc_macro::TLBDerive;
@@ -42,7 +42,7 @@ impl DerefMut for Grams {
 
 #[cfg(test)]
 mod tests {
-    use crate::tlb::block::coins::CurrencyCollection;
+    use crate::tlb::block_tlb::coins::CurrencyCollection;
     use crate::tlb::tlb_type::TLBType;
 
     #[test]

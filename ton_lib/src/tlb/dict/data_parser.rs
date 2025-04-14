@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::label_type::LabelType;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
-use crate::tlb::block::unary::Unary;
+use crate::tlb::block_tlb::unary::Unary;
 use crate::tlb::dict::adapters_val::DictValAdapter;
 use crate::tlb::tlb_type::TLBType;
 use num_bigint::BigUint;

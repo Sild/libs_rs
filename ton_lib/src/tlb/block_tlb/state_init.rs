@@ -17,11 +17,7 @@ pub struct StateInit {
     pub tick_tock: Option<TickTock>,
     pub code: Option<TonCellRef>,
     pub data: Option<TonCellRef>,
-    #[tlb_derive(
-        key_bits_len = 256,
-        key_adapter = "DictKeyAdapterTonHash",
-        val_adapter = "DictValAdapterTLB"
-    )]
+    #[tlb_derive(key_bits_len = 256, key_adapter = "DictKeyAdapterTonHash", val_adapter = "DictValAdapterTLB")]
     pub library: HashMap<TonHash, TonCellRef>,
 }
 
@@ -46,7 +42,7 @@ impl StateInit {
 #[cfg(test)]
 mod tests {
     use crate::boc::boc::BOC;
-    use crate::tlb::block::state_init::StateInit;
+    use crate::tlb::block_tlb::state_init::StateInit;
     use crate::tlb::tlb_type::TLBType;
     use std::collections::HashMap;
     use std::ops::Deref;

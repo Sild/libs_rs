@@ -2,7 +2,7 @@ use crate::cell::ton_cell::TonCellRef;
 use crate::cell::ton_hash::TonHash;
 use crate::errors::TonLibError;
 use crate::errors::TonLibError::TonAddressParseError;
-use crate::tlb::block::state_init::StateInit;
+use crate::tlb::block_tlb::state_init::StateInit;
 use crate::tlb::tlb_type::TLBType;
 use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use base64::Engine;

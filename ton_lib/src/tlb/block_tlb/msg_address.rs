@@ -3,7 +3,7 @@ use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 use crate::tlb::adapters::const_len::ConstLen;
 use crate::tlb::adapters::const_len::ConstLenRef;
-use crate::tlb::block::var_len::var_len::VarLenBits;
+use crate::tlb::block_tlb::var_len::var_len::VarLenBits;
 use crate::tlb::tlb_type::TLBPrefix;
 use crate::tlb::tlb_type::TLBType;
 use ton_lib_proc_macro::TLBDerive;
@@ -87,7 +87,7 @@ impl TLBType for MsgAddressIntVar {
 /// Allows easily convert enum variants to parent type
 #[rustfmt::skip]
 mod from_impl {
-    use crate::tlb::block::msg_address::*;
+    use crate::tlb::block_tlb::msg_address::*;
     impl From<MsgAddressNone> for MsgAddressExt { fn from(value: MsgAddressNone) -> Self { Self::None(value) } }
     impl From<MsgAddressExtern> for MsgAddressExt { fn from(value: MsgAddressExtern) -> Self { Self::Extern(value) } }
     impl From<MsgAddressIntStd> for MsgAddressInt { fn from(value: MsgAddressIntStd) -> Self { Self::Std(value) } }

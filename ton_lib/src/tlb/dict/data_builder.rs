@@ -4,7 +4,7 @@ use crate::cell::build_parse::builder::CellBuilder;
 use crate::cell::ton_cell::TonCell;
 use crate::errors::TonLibError;
 use crate::errors::TonLibError::TLBDictWrongKeyLen;
-use crate::tlb::block::unary::Unary;
+use crate::tlb::block_tlb::unary::Unary;
 use crate::tlb::dict::adapters_val::DictValAdapter;
 use crate::tlb::tlb_type::TLBType;
 use num_bigint::BigUint;
