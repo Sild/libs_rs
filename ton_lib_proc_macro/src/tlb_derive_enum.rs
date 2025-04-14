@@ -38,7 +38,7 @@ pub(crate) fn tlb_derive_enum(
             panic!("Each enum variant must have exactly one unnamed field");
         }
         quote! {
-            Self::#variant_name(ref value) => value.write(dst)?,
+            Self::#variant_name(ref value) => value.write(builder)?,
         }
     });
 

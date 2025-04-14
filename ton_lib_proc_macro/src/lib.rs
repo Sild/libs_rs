@@ -20,6 +20,9 @@ struct TLBHeaderAttrs {
 #[deluxe(attributes(tlb_derive))]
 struct TLBFieldAttrs {
     bits_len: Option<u32>,
+    key_bits_len: Option<u32>,
+    key_adapter: Option<String>,
+    val_adapter: Option<String>,
 }
 
 /// Automatic `TLBType` implementation
@@ -61,14 +64,12 @@ pub fn tlb_derive(input: TokenStream) -> TokenStream {
             const PREFIX: #crate_path::tlb::tlb_type::TLBPrefix = #crate_path::tlb::tlb_type::TLBPrefix::new(#prefix_val, #prefix_bits_len);
 
             fn read_definition(parser: &mut #crate_path::cell::build_parse::parser::CellParser) -> Result<Self, #crate_path::errors::TonLibError> {
-                use #crate_path::tlb::adapters::const_len::ConstLen;
                 use #crate_path::tlb::tlb_type::TLBType;
 
                 #read_def_tokens
             }
 
-            fn write_definition(&self, dst: &mut #crate_path::cell::build_parse::builder::CellBuilder) -> Result<(), #crate_path::errors::TonLibError> {
-                use #crate_path::tlb::adapters::const_len::ConstLenRef;
+            fn write_definition(&self, builder: &mut #crate_path::cell::build_parse::builder::CellBuilder) -> Result<(), #crate_path::errors::TonLibError> {
                 use #crate_path::tlb::tlb_type::TLBType;
 
                 #write_def_tokens

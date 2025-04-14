@@ -4,36 +4,40 @@ use super::label_type::LabelType;
 use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 use crate::tlb::block::unary::Unary;
+use crate::tlb::dict::adapters_val::DictValAdapter;
 use crate::tlb::tlb_type::TLBType;
 use num_bigint::BigUint;
 use num_traits::One;
 
-pub(crate) struct DictDataParser {
+pub(super) struct DictDataParser {
     key_bits_len: usize,
     cur_key_prefix: BigUint, // store leading 1 to determinate len properly
 }
 
 impl DictDataParser {
-    pub(crate) fn new(key_len_bits: usize) -> DictDataParser {
+    pub(super) fn new(key_len_bits: usize) -> DictDataParser {
         DictDataParser {
             key_bits_len: key_len_bits,
             cur_key_prefix: BigUint::one(),
         }
     }
 
-    pub(crate) fn parse<V: TLBType>(&mut self, parser: &mut CellParser) -> Result<HashMap<BigUint, V>, TonLibError> {
+    pub(super) fn read<T, VA: DictValAdapter<T>>(
+        &mut self,
+        parser: &mut CellParser,
+    ) -> Result<HashMap<BigUint, T>, TonLibError> {
         // reset state in case of reusing
         self.cur_key_prefix = BigUint::one();
 
         let mut result = HashMap::new();
-        self.parse_impl(parser, &mut result)?;
+        self.parse_impl::<T, VA>(parser, &mut result)?;
         Ok(result)
     }
 
-    fn parse_impl<V: TLBType>(
+    fn parse_impl<T, VA: DictValAdapter<T>>(
         &mut self,
         parser: &mut CellParser,
-        dst: &mut HashMap<BigUint, V>,
+        dst: &mut HashMap<BigUint, T>,
     ) -> Result<(), TonLibError> {
         // will rollback prefix to original value at the end of the function
         let origin_key_prefix_len = self.cur_key_prefix.bits();
@@ -73,15 +77,15 @@ impl DictDataParser {
         if self.cur_key_prefix.bits() as usize == (self.key_bits_len + 1) {
             let mut key = BigUint::one() << self.key_bits_len;
             key ^= &self.cur_key_prefix;
-            dst.insert(key, V::read(parser)?);
+            dst.insert(key, VA::read(parser)?);
         } else {
             let left_ref = parser.read_next_ref()?;
             self.cur_key_prefix <<= 1;
-            self.parse_impl(&mut CellParser::new(left_ref), dst)?;
+            self.parse_impl::<T, VA>(&mut CellParser::new(left_ref), dst)?;
 
             let right_ref = parser.read_next_ref()?;
             self.cur_key_prefix += BigUint::one();
-            self.parse_impl(&mut CellParser::new(right_ref), dst)?;
+            self.parse_impl::<T, VA>(&mut CellParser::new(right_ref), dst)?;
         }
         self.cur_key_prefix >>= self.cur_key_prefix.bits() - origin_key_prefix_len;
         Ok(())

@@ -11,10 +11,7 @@ struct FieldInfo {
     ty: syn::Type,
 }
 
-pub(crate) fn tlb_derive_struct(
-    header_attrs: &TLBHeaderAttrs,
-    data: &mut DataStruct,
-) -> (TokenStream, TokenStream) {
+pub(crate) fn tlb_derive_struct(header_attrs: &TLBHeaderAttrs, data: &mut DataStruct) -> (TokenStream, TokenStream) {
     let fields = match &mut data.fields {
         Fields::Named(fields) => &mut fields.named, // For struct { field1: T, field2: T }
         Fields::Unnamed(fields) => &mut fields.unnamed, // For tuple struct (T, T)
@@ -46,24 +43,41 @@ pub(crate) fn tlb_derive_struct(
     }
 }
 
-fn derive_named_struct(
-    header_attrs: &TLBHeaderAttrs,
-    fields: &[FieldInfo],
-) -> (TokenStream, TokenStream) {
+fn derive_named_struct(header_attrs: &TLBHeaderAttrs, fields: &[FieldInfo]) -> (TokenStream, TokenStream) {
     let mut read_tokens = Vec::with_capacity(fields.len());
     let mut init_tokens = Vec::with_capacity(fields.len());
     let mut write_tokens = Vec::with_capacity(fields.len());
     for field in fields {
         let ident = field.ident.as_ref().unwrap();
         let ty = &field.ty;
-        if let Some(bits_len) = field.attrs.bits_len {
+        if let Some(bits_len) = &field.attrs.bits_len {
+            // ConstLen
             read_tokens.push(quote!(let #ident = ConstLen::<#ty, #bits_len>::read(parser)?;));
             init_tokens.push(quote!(#ident: #ident.0,));
-            write_tokens.push(quote!(ConstLenRef::<#ty, #bits_len>(&self.#ident).write(dst)?;));
+            write_tokens.push(quote!(ConstLenRef::<#ty, #bits_len>(&self.#ident).write(builder)?;));
+        } else if let Some(key_bits_len) = &field.attrs.key_bits_len {
+            // Dict
+            let key_adapter = field
+                .attrs
+                .key_adapter
+                .as_ref()
+                .unwrap_or_else(|| panic!("for dict, key_adapter and val_adapter are required"));
+            let val_adapter = field
+                .attrs
+                .val_adapter
+                .as_ref()
+                .unwrap_or_else(|| panic!("for dict, key_adapter and val_adapter are required"));
+            let key_ident = format_ident!("{}", key_adapter);
+            let val_ident = format_ident!("{}", val_adapter);
+
+            read_tokens.push(quote!(let #ident = Dict::<_, _, #key_ident, #val_ident>::read(parser, #key_bits_len)?;));
+            init_tokens.push(quote!(#ident: #ident,));
+            write_tokens
+                .push(quote!(Dict::<_, _, #key_ident, #val_ident>::write(builder, #key_bits_len, &self.#ident)?;));
         } else {
             read_tokens.push(quote!(let #ident = TLBType::read(parser)?;));
             init_tokens.push(quote!(#ident,));
-            write_tokens.push(quote!(self.#ident.write(dst)?;));
+            write_tokens.push(quote!(self.#ident.write(builder)?;));
         }
     }
 
@@ -85,10 +99,7 @@ fn derive_named_struct(
     (read_impl_token, write_impl_token)
 }
 
-fn derive_unnamed_struct(
-    header_attrs: &TLBHeaderAttrs,
-    fields: &[FieldInfo],
-) -> (TokenStream, TokenStream) {
+fn derive_unnamed_struct(header_attrs: &TLBHeaderAttrs, fields: &[FieldInfo]) -> (TokenStream, TokenStream) {
     let mut read_tokens = Vec::with_capacity(fields.len());
     let mut init_tokens = Vec::with_capacity(fields.len());
     let mut write_tokens = Vec::with_capacity(fields.len());
@@ -99,11 +110,33 @@ fn derive_unnamed_struct(
         if let Some(bits_len) = field.attrs.bits_len {
             read_tokens.push(quote!(let #read_ident = ConstLen::<#ty, #bits_len>::read(parser)?;));
             init_tokens.push(quote!(#read_ident.0,));
-            write_tokens.push(quote!(ConstLenRef::<#ty, #bits_len>(&self.#position).write(dst)?;));
+            write_tokens.push(quote!(ConstLenRef::<#ty, #bits_len>(&self.#position).write(builder)?;));
+        } else if let Some(key_bits_len) = field.attrs.key_bits_len {
+            // Dict
+            let key_adapter = field
+                .attrs
+                .key_adapter
+                .as_ref()
+                .ok_or_else(|| panic!("for dict, key_adapter and val_adapter are required"))
+                .unwrap();
+            let val_adapter = field
+                .attrs
+                .val_adapter
+                .as_ref()
+                .ok_or_else(|| panic!("for dict, key_adapter and val_adapter are required"))
+                .unwrap();
+            let key_ident = format_ident!("{}", key_adapter);
+            let val_ident = format_ident!("{}", val_adapter);
+
+            read_tokens
+                .push(quote!(let #read_ident = Dict::<_, _, #key_ident, #val_ident>::read(parser, #key_bits_len)?;));
+            init_tokens.push(quote!(#read_ident,));
+            write_tokens
+                .push(quote!(Dict::<_, _, #key_ident, #val_ident>::write(builder, #key_bits_len, &self.#position)?;));
         } else {
             read_tokens.push(quote!(let #read_ident = TLBType::read(parser)?;));
             init_tokens.push(quote!(#read_ident,));
-            write_tokens.push(quote!(self.#position.write(dst)?;));
+            write_tokens.push(quote!(self.#position.write(builder)?;));
         }
     }
 

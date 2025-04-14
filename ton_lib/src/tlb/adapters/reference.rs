@@ -3,7 +3,7 @@ use crate::cell::build_parse::parser::CellParser;
 use crate::errors::TonLibError;
 use crate::tlb::tlb_type::TLBType;
 
-/// TLBRef - allows to store object in a reference cell.
+/// TLBRef - allows to save object in a reference cell.
 ///
 /// use `#[tlb_derive(TLBRef)]` to apply in automatically in TLBDerive macro
 #[derive(Debug, Clone, PartialEq)]

@@ -9,8 +9,6 @@ use base64::Engine;
 use crc::Crc;
 use std::str::FromStr;
 
-const CRC_16_XMODEM: Crc<u16> = Crc::<u16>::new(&crc::CRC_16_XMODEM);
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TonAddress {
     pub wc: i32,
@@ -49,6 +47,8 @@ impl TonAddress {
     }
 
     pub fn from_bytes(bytes: &[u8], addr_str: &str) -> Result<Self, TonLibError> {
+        const CRC_16_XMODEM: Crc<u16> = Crc::<u16>::new(&crc::CRC_16_XMODEM);
+
         if bytes.len() != 36 {
             raise_address_error(addr_str, format!("expecting 36 bytes, got {}", bytes.len()))?;
         }

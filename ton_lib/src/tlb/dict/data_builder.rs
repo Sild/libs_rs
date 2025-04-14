@@ -5,22 +5,25 @@ use crate::cell::ton_cell::TonCell;
 use crate::errors::TonLibError;
 use crate::errors::TonLibError::TLBDictWrongKeyLen;
 use crate::tlb::block::unary::Unary;
+use crate::tlb::dict::adapters_val::DictValAdapter;
 use crate::tlb::tlb_type::TLBType;
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
+use std::marker::PhantomData;
 use std::mem::swap;
 
-pub(crate) struct DictDataBuilder<'a, V: TLBType> {
+pub(super) struct DictDataBuilder<'a, T, VA: DictValAdapter<T>> {
     keys_sorted: Vec<BigUint>, // contains 1 extra leading bit set to 1
-    values_sorted: &'a [V],
+    values_sorted: &'a [&'a T],
     key_bits_len_left: usize,
+    _phantom: PhantomData<VA>,
 }
 
-impl<'a, V: TLBType> DictDataBuilder<'a, V> {
-    pub(crate) fn new(
+impl<'a, T, VA: DictValAdapter<T>> DictDataBuilder<'a, T, VA> {
+    pub(super) fn new(
         key_bits_len: usize,
         mut keys_sorted: Vec<BigUint>,
-        values_sorted: &'a [V],
+        values_sorted: &'a [&'a T],
     ) -> Result<Self, TonLibError> {
         // we support writing empty dict, but it's usually handled by 0 bit in parent cell
         prepare_keys(&mut keys_sorted, key_bits_len)?;
@@ -28,11 +31,12 @@ impl<'a, V: TLBType> DictDataBuilder<'a, V> {
             keys_sorted,
             values_sorted,
             key_bits_len_left: key_bits_len,
+            _phantom: PhantomData,
         };
         Ok(builder)
     }
 
-    pub(crate) fn build(mut self) -> Result<TonCell, TonLibError> {
+    pub(super) fn build(mut self) -> Result<TonCell, TonLibError> {
         let mut builder = CellBuilder::new();
         if self.keys_sorted.is_empty() {
             return builder.build();
@@ -101,7 +105,7 @@ impl<'a, V: TLBType> DictDataBuilder<'a, V> {
         label: &BigUint,
     ) -> Result<(), TonLibError> {
         self.store_label(builder, label)?;
-        self.values_sorted[orig_key_pos].write(builder)?;
+        VA::write(builder, self.values_sorted[orig_key_pos])?;
         Ok(())
     }
 

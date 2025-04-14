@@ -109,11 +109,12 @@ impl<'a> CellParser<'a> {
 
     pub fn ensure_empty(&mut self) -> Result<(), TonLibError> {
         let bits_left = self.data_bits_left()?;
-        if bits_left == 0 {
+        let refs_left = self.cell.refs.len() - self.next_ref_pos;
+        if bits_left == 0 && refs_left == 0 {
             return Ok(());
         }
 
-        Err(TonLibError::ParserCellNotEmpty { bits_left })
+        Err(TonLibError::ParserCellNotEmpty { bits_left, refs_left })
     }
 
     // returns remaining bits
@@ -304,6 +305,23 @@ mod tests {
         assert_eq!(parser.read_num::<BigUint>(7)?, 85u32.into()); // finish with second byte
         assert_eq!(parser.data_reader.position_in_bits()?, 16);
         assert_eq!(parser.read_num::<BigUint>(16)?, 65535u32.into());
+        Ok(())
+    }
+
+    #[test]
+    fn test_parser_ensure_empty() -> anyhow::Result<()> {
+        let cell_ref = make_test_cell(&[0b10101010, 0b01010101], 16)?;
+        let mut builder = CellBuilder::new();
+        builder.write_ref(cell_ref.into_ref())?;
+        builder.write_num(&3, 3)?;
+        let cell = builder.build()?;
+
+        let mut parser = CellParser::new(&cell);
+        assert_err!(parser.ensure_empty());
+        parser.read_bits(3)?;
+        assert_err!(parser.ensure_empty());
+        parser.read_next_ref()?;
+        assert_ok!(parser.ensure_empty());
         Ok(())
     }
 }

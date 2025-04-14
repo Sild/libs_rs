@@ -15,8 +15,8 @@ pub enum TonLibError {
     ParserBadPosition { new_pos: i32, bits_len: u32 },
     #[error("ParserError: No ref with index={req}")]
     ParserRefsUnderflow { req: usize },
-    #[error("ParserError: Cell is not empty: {bits_left} bits left")]
-    ParserCellNotEmpty { bits_left: u32 },
+    #[error("ParserError: Cell is not empty: {bits_left} bits left, {refs_left} refs left")]
+    ParserCellNotEmpty { bits_left: u32, refs_left: usize },
 
     // cell_builder
     #[error("BuilderError: Can't write {req} bits: only {left} free bits available")]
@@ -60,6 +60,9 @@ pub enum TonLibError {
     #[error("TonAddressParseError: address={0}, err: {1}")]
     TonAddressParseError(String, String),
 
+    #[error("TonLibCustomError: {0}")]
+    CustomError(String),
+
     // handling external errors
     #[error("{0}")]
     IO(#[from] std::io::Error),
@@ -69,4 +72,6 @@ pub enum TonLibError {
     B64Error(#[from] base64::DecodeError),
     #[error("{0}")]
     ParseInt(#[from] std::num::ParseIntError),
+    #[error("{0}")]
+    FromUtf8(#[from] std::string::FromUtf8Error),
 }
