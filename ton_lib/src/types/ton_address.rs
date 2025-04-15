@@ -66,6 +66,11 @@ impl TonAddress {
     }
 }
 
+impl TryFrom<&str> for TonAddress {
+    type Error = TonLibError;
+    fn try_from(s: &str) -> Result<Self, Self::Error> { TonAddress::from_str(s) }
+}
+
 impl FromStr for TonAddress {
     type Err = TonLibError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
