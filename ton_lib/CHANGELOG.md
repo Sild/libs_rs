@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.11](https://github.com/Sild/libs_rs/compare/ton_lib-v0.0.10...ton_lib-v0.0.11) - 2025-04-24
+
+### Fixed
+
+- fix format
+
+### Other
+
+- add to/from boc_b64 support
+- add custom test case for write_num(BigUint)
+- Build dict bench ([#53](https://github.com/Sild/libs_rs/pull/53))
+
 ## [0.0.10](https://github.com/Sild/libs_rs/compare/ton_lib-v0.0.9...ton_lib-v0.0.10) - 2025-04-20
 
 ### Other
