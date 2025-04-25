@@ -1,3 +1,6 @@
+use crate::errors::TonlibError;
+use std::ffi::CStr;
+
 // return false if preconditions are not met
 pub fn rewrite_bits(src: &[u8], src_offset_bits: usize, dst: &mut [u8], dst_offset_bits: usize, len: usize) -> bool {
     // Calculate total bits available in source and destination
