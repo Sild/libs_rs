@@ -6,7 +6,7 @@ use ton_liteapi::tl::request::Request;
 use ton_liteapi::types::LiteError;
 
 #[derive(Error, Debug)]
-pub enum TonLibError {
+pub enum TonlibError {
     // ton_hash
     #[error("TonHashError: Expecting {exp} bytes, got {given}")]
     TonHashWrongLen { exp: usize, given: usize },
@@ -63,18 +63,34 @@ pub enum TonLibError {
     #[error("TonAddressParseError: address={0}, err: {1}")]
     TonAddressParseError(String, String),
 
-    #[error("TonLiteClientWrongResponseType: expected {0}, got {1}")]
-    TonLiteClientWrongResponseType(String, String),
     #[error("NetRequestTimeout: {msg}, timeout={timeout:?}")]
     NetRequestTimeout { msg: String, timeout: Duration },
 
-    // LiteClint
+    // LiteClient
+    #[error("LiteClientWrongResponse: expected {0}, got {1}")]
+    TonLiteClientWrongResponse(String, String),
     #[error("LiteClientLiteError: {0}")]
     LiteClientLiteError(#[from] LiteError),
     #[error("LiteClientConnTimeout: {0:?}")]
     LiteClientConnTimeout(Duration),
     #[error("LiteClientReqTimeout: {0:?}")]
     LiteClientReqTimeout(Box<(Request, Duration)>),
+
+    // TonlibClient
+    #[error("TLJClientWrongResult: expected type: {0}, got: {1}")]
+    TLJClientWrongResult(String, String),
+    #[error("TLJInvalidArguments: {0}")]
+    TLJInvalidArgs(String),
+    #[error("TLJSendError: fail to send request: {0}")]
+    TLJSendError(String),
+    #[error("TLJInvalidResponse: method: {method}, code: {code}, message: {message}")]
+    TLJExecError { method: String, code: i32, message: String },
+    #[error("TLJWrongExecImplUsage: {0}")]
+    TLJWrongUsage(String),
+
+    // TVM
+    #[error("TvmStackError: {0}")]
+    TvmStackError(String),
 
     #[error("CustomError: {0}")]
     CustomError(String),
@@ -92,6 +108,10 @@ pub enum TonLibError {
     #[error("{0}")]
     FromUtf8(#[from] std::string::FromUtf8Error),
     #[error("{0}")]
+    Utf8Error(#[from] std::str::Utf8Error),
+    #[error("{0}")]
+    NulError(#[from] std::ffi::NulError),
+    #[error("{0}")]
     SerdeJson(#[from] serde_json::Error),
     #[error("{0}")]
     ElapsedError(#[from] tokio::time::error::Elapsed),
@@ -99,4 +119,8 @@ pub enum TonLibError {
     AdnlError(#[from] adnl::AdnlError),
     #[error("{0}")]
     ParseBigIntError(#[from] num_bigint::ParseBigIntError),
+}
+
+impl<T> Into<Result<T, TonlibError>> for TonlibError {
+    fn into(self) -> Result<T, TonlibError> { Err(self) }
 }
