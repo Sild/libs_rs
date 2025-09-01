@@ -1,4 +1,4 @@
-# autoreturn-pool
+# auto_pool
 
 This pool automatically manages the return of objects.
 
