@@ -2,7 +2,7 @@ use super::pool_object::PoolObject;
 use crate::config::{AutoPoolConfig, PickStrategy};
 use parking_lot::lock_api::{MutexGuard, RawMutex};
 use parking_lot::{Condvar, Mutex};
-use rand::RngCore;
+use rand::Rng;
 use std::time::Duration;
 
 /// A pool of objects.
@@ -49,11 +49,11 @@ impl<T: Send + 'static> AutoPool<T> {
     }
 
     /// Take an object from the pool.
-    pub fn get(&self) -> Option<PoolObject<T>> { self.get_with_timeout(self.config.wait_duration) }
+    pub fn get(&'_ self) -> Option<PoolObject<'_, T>> { self.get_with_timeout(self.config.wait_duration) }
 
     /// Async version - tries to get object, sleep if fails until timeout
     #[cfg(feature = "async")]
-    pub async fn get_async(&self) -> Option<PoolObject<T>> {
+    pub async fn get_async(&'_ self) -> Option<PoolObject<'_, T>> {
         if self.config.wait_duration.is_zero() {
             return self.get();
         }
@@ -63,7 +63,7 @@ impl<T: Send + 'static> AutoPool<T> {
             if let Some(obj) = self.get_with_timeout(self.config.lock_duration) {
                 return Some(obj);
             }
-            async_std::task::sleep(self.config.sleep_duration).await;
+            smol::Timer::after(self.config.sleep_duration).await;
         }
         None
     }
@@ -81,7 +81,7 @@ impl<T: Send + 'static> AutoPool<T> {
     /// Shrink the pool to fit current number of items
     pub fn shrink_to_fit(&self) { self.storage.lock().shrink_to_fit(); }
 
-    fn get_with_timeout(&self, timeout: Duration) -> Option<PoolObject<T>> {
+    fn get_with_timeout(&'_ self, timeout: Duration) -> Option<PoolObject<'_, T>> {
         let mut locked_storage = self.storage.lock();
         while locked_storage.is_empty() {
             let wait_res = self.condvar.wait_for(&mut locked_storage, timeout);
@@ -92,7 +92,7 @@ impl<T: Send + 'static> AutoPool<T> {
         self.extract_object(locked_storage)
     }
 
-    fn extract_object<R>(&self, mut locked_storage: MutexGuard<R, Vec<T>>) -> Option<PoolObject<T>>
+    fn extract_object<R>(&'_ self, mut locked_storage: MutexGuard<R, Vec<T>>) -> Option<PoolObject<'_, T>>
     where
         R: RawMutex,
     {
